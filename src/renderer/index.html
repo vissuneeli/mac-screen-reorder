@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self' mediastream:; img-src 'self' data:;">
+  <title>macOS Screen Recorder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <div class="titlebar-spacer"></div>
+    <h1>Screen Recorder</h1>
+
+    <section id="displays">
+      <h2>Select Displays</h2>
+      <div id="display-list">
+        <p class="loading">Loading displays...</p>
+      </div>
+    </section>
+
+    <section id="audio-settings">
+      <h2>Audio</h2>
+      <label>
+        <input type="checkbox" id="capture-system-audio" checked>
+        System Audio
+      </label>
+      <label>
+        <input type="checkbox" id="capture-microphone" checked>
+        Microphone
+      </label>
+      <div class="gain-control">
+        <label for="mic-gain">Mic Volume</label>
+        <input type="range" id="mic-gain" min="0" max="100" value="80">
+      </div>
+    </section>
+
+    <section id="controls">
+      <button id="start-btn">Start Recording</button>
+      <button id="stop-btn" disabled>Stop Recording</button>
+    </section>
+
+    <section id="status">
+      <p id="status-text">Ready</p>
+      <p id="timer" style="display: none;">00:00:00</p>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
