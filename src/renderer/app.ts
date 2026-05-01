@@ -112,8 +112,8 @@ class RecorderApp {
       ) {
         try {
           return await this.captureScreenViaDesktopSource();
-        } catch {
-          throw err;
+        } catch (fallbackErr) {
+          throw fallbackErr;
         }
       }
       throw err;
