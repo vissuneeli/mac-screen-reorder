@@ -175,6 +175,22 @@ input[type="checkbox"] {
   transition: width 0.06s linear;
 }
 
+.quality-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quality-options label {
+  font-size: 14px;
+}
+
+.quality-options small {
+  color: #666;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
 #controls {
   display: flex;
   gap: 10px;

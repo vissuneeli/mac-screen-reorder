@@ -7,6 +7,7 @@ class Settings {
       microphoneEnabled: true,
       micGain: 80,
       lastSelectedDisplay: null as string | null,
+      qualityLevel: 'medium' as 'low' | 'medium' | 'high',
     };
   }
 
@@ -34,7 +35,17 @@ class Settings {
   static updateLastDisplay(displayId: string | null) {
     const s = this.load(); s.lastSelectedDisplay = displayId; this.save(s);
   }
+  static updateQuality(level: 'low' | 'medium' | 'high') {
+    const s = this.load(); s.qualityLevel = level; this.save(s);
+  }
 }
+
+type QualityLevel = 'low' | 'medium' | 'high';
+const QUALITY_PRESETS: Record<QualityLevel, { bitrate: number; framerate: number }> = {
+  low:    { bitrate: 1_500_000, framerate: 24 },
+  medium: { bitrate: 2_500_000, framerate: 30 },
+  high:   { bitrate: 5_000_000, framerate: 60 },
+};
 
 interface DisplayInfo {
   id: string;
@@ -120,6 +131,7 @@ class AudioMixer {
 class RecorderApp {
   private displays: DisplayInfo[] = [];
   private selectedDisplayId: string | null = null;
+  private selectedQuality: QualityLevel = 'medium';
   private isRecording = false;
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
@@ -146,6 +158,13 @@ class RecorderApp {
     micCb.addEventListener('change', () => Settings.updateMicrophone(micCb.checked));
     micGainSlider.addEventListener('change', () => Settings.updateMicGain(parseInt(micGainSlider.value)));
 
+    document.querySelectorAll<HTMLInputElement>('input[name="quality"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        this.selectedQuality = radio.value as QualityLevel;
+        Settings.updateQuality(this.selectedQuality);
+      });
+    });
+
     // Load displays, then restore saved settings
     await this.loadDisplays();
     this.applySettings();
@@ -157,6 +176,10 @@ class RecorderApp {
     (document.getElementById('capture-system-audio') as HTMLInputElement).checked = settings.systemAudioEnabled;
     (document.getElementById('capture-microphone') as HTMLInputElement).checked = settings.microphoneEnabled;
     (document.getElementById('mic-gain') as HTMLInputElement).value = String(settings.micGain);
+
+    this.selectedQuality = settings.qualityLevel;
+    const qualityRadio = document.querySelector<HTMLInputElement>(`input[name="quality"][value="${settings.qualityLevel}"]`);
+    if (qualityRadio) qualityRadio.checked = true;
 
     if (settings.lastSelectedDisplay) {
       const radio = document.querySelector(
@@ -210,9 +233,9 @@ class RecorderApp {
   }
 
   private async captureScreen(withAudio: boolean): Promise<MediaStream> {
-    // Use getDisplayMedia — this properly triggers the macOS screen picker & permission dialog
+    const preset = QUALITY_PRESETS[this.selectedQuality];
     const constraints: DisplayMediaStreamOptions = {
-      video: { frameRate: 30 },
+      video: { frameRate: preset.framerate },
       audio: withAudio,
     };
     try {
@@ -314,9 +337,10 @@ class RecorderApp {
       ]);
 
       this.recordedChunks = [];
+      const preset = QUALITY_PRESETS[this.selectedQuality];
       this.mediaRecorder = new MediaRecorder(combined, {
         mimeType: 'video/webm;codecs=vp9,opus',
-        videoBitsPerSecond: 2_500_000,
+        videoBitsPerSecond: preset.bitrate,
       });
 
       this.mediaRecorder.ondataavailable = (e) => {
