@@ -12,11 +12,6 @@ body {
   user-select: none;
 }
 
-.titlebar-spacer {
-  height: 28px;
-  -webkit-app-region: drag;
-}
-
 #app {
   max-width: 480px;
   margin: 0 auto;

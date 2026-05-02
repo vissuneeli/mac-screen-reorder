@@ -1,3 +1,41 @@
+class Settings {
+  private static readonly STORAGE_KEY = 'screenRecorderSettings';
+
+  private static getDefaults() {
+    return {
+      systemAudioEnabled: true,
+      microphoneEnabled: true,
+      micGain: 80,
+      lastSelectedDisplay: null as string | null,
+    };
+  }
+
+  static load() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (stored) return { ...this.getDefaults(), ...JSON.parse(stored) };
+    } catch { /* ignore corrupt data */ }
+    return this.getDefaults();
+  }
+
+  private static save(settings: ReturnType<typeof Settings.getDefaults>) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(settings));
+  }
+
+  static updateSystemAudio(enabled: boolean) {
+    const s = this.load(); s.systemAudioEnabled = enabled; this.save(s);
+  }
+  static updateMicrophone(enabled: boolean) {
+    const s = this.load(); s.microphoneEnabled = enabled; this.save(s);
+  }
+  static updateMicGain(gain: number) {
+    const s = this.load(); s.micGain = gain; this.save(s);
+  }
+  static updateLastDisplay(displayId: string | null) {
+    const s = this.load(); s.lastSelectedDisplay = displayId; this.save(s);
+  }
+}
+
 interface DisplayInfo {
   id: string;
   name: string;
@@ -50,11 +88,43 @@ class RecorderApp {
   async init() {
     document.getElementById('start-btn')!.addEventListener('click', () => this.startRecording());
     document.getElementById('stop-btn')!.addEventListener('click', () => this.stopRecording());
-    const micGain = document.getElementById('mic-gain') as HTMLInputElement;
-    micGain.addEventListener('input', () => {
-      this.audioMixer?.setGain('microphone', parseInt(micGain.value) / 100);
+
+    const systemAudioCb = document.getElementById('capture-system-audio') as HTMLInputElement;
+    const micCb = document.getElementById('capture-microphone') as HTMLInputElement;
+    const micGainSlider = document.getElementById('mic-gain') as HTMLInputElement;
+
+    // Live mic gain adjustment during recording
+    micGainSlider.addEventListener('input', () => {
+      this.audioMixer?.setGain('microphone', parseInt(micGainSlider.value) / 100);
     });
+
+    // Persist settings on change
+    systemAudioCb.addEventListener('change', () => Settings.updateSystemAudio(systemAudioCb.checked));
+    micCb.addEventListener('change', () => Settings.updateMicrophone(micCb.checked));
+    micGainSlider.addEventListener('change', () => Settings.updateMicGain(parseInt(micGainSlider.value)));
+
+    // Load displays, then restore saved settings
     await this.loadDisplays();
+    this.applySettings();
+  }
+
+  private applySettings() {
+    const settings = Settings.load();
+
+    (document.getElementById('capture-system-audio') as HTMLInputElement).checked = settings.systemAudioEnabled;
+    (document.getElementById('capture-microphone') as HTMLInputElement).checked = settings.microphoneEnabled;
+    (document.getElementById('mic-gain') as HTMLInputElement).value = String(settings.micGain);
+
+    if (settings.lastSelectedDisplay) {
+      const radio = document.querySelector(
+        `input[name="display"][value="${settings.lastSelectedDisplay}"]`
+      ) as HTMLInputElement | null;
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change'));
+        this.selectedDisplayId = settings.lastSelectedDisplay;
+      }
+    }
   }
 
   async loadDisplays() {
@@ -89,6 +159,7 @@ class RecorderApp {
         document.querySelectorAll('.display-item').forEach(el => el.classList.remove('selected'));
         item.classList.add('selected');
         this.selectedDisplayId = display.id;
+        Settings.updateLastDisplay(display.id);
       });
 
       list.appendChild(item);
@@ -144,7 +215,7 @@ class RecorderApp {
       } as MediaTrackConstraints,
     });
 
-    this.setStatus('System audio not supported on this setup. Recording selected screen + mic.', '');
+    this.setStatus('System audio not supported on this setup. Continuing with selected screen capture.', '');
     return stream;
   }
 
