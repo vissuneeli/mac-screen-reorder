@@ -94,3 +94,17 @@ ipcMain.handle('pick-output-folder', async () => {
 ipcMain.handle('get-default-output', () => {
   return app.getPath('documents');
 });
+
+ipcMain.handle('reveal-file', (_event, filePath: string) => {
+  shell.showItemInFolder(filePath);
+});
+
+ipcMain.handle('delete-file', async (_event, filePath: string) => {
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return { success: true };
+    }
+  } catch { /* ignore */ }
+  return { success: false };
+});

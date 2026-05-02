@@ -44,6 +44,38 @@ class Settings {
   }
 }
 
+interface RecordingEntry {
+  filename: string;
+  path: string;
+  timestamp: number;
+  size: number;
+  duration: string;
+}
+
+class RecordingHistory {
+  private static readonly KEY = 'recordingHistory';
+  private static readonly MAX = 5;
+
+  static load(): RecordingEntry[] {
+    try {
+      const stored = localStorage.getItem(this.KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  }
+
+  static add(entry: RecordingEntry) {
+    const history = this.load();
+    history.unshift(entry);
+    history.splice(this.MAX);
+    localStorage.setItem(this.KEY, JSON.stringify(history));
+  }
+
+  static remove(path: string) {
+    const history = this.load().filter(r => r.path !== path);
+    localStorage.setItem(this.KEY, JSON.stringify(history));
+  }
+}
+
 type QualityLevel = 'low' | 'medium' | 'high';
 const QUALITY_PRESETS: Record<QualityLevel, { bitrate: number; framerate: number }> = {
   low:    { bitrate: 1_500_000, framerate: 24 },
@@ -177,6 +209,7 @@ class RecorderApp {
     this.defaultOutputPath = await window.electronAPI.getDefaultOutput();
     await this.loadDisplays();
     this.applySettings();
+    this.refreshRecentList();
   }
 
   private applySettings() {
@@ -396,12 +429,23 @@ class RecorderApp {
     const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
     const buffer = await blob.arrayBuffer();
     const filename = `recording-${Date.now()}.webm`;
+    const duration = document.getElementById('timer')!.textContent || '00:00:00';
     try {
       const result = await window.electronAPI.saveRecording({
         buffer,
         filename,
         folder: this.outputFolder || undefined,
       });
+
+      RecordingHistory.add({
+        filename,
+        path: result.path,
+        timestamp: Date.now(),
+        size: buffer.byteLength,
+        duration,
+      });
+      this.refreshRecentList();
+
       this.setStatus(`Saved → ${result.path}`, 'saved');
     } catch {
       this.setStatus('Failed to save recording', '');
@@ -440,6 +484,57 @@ class RecorderApp {
 
     el.style.display = 'none';
     el.classList.remove('active');
+  }
+
+  private refreshRecentList() {
+    const history = RecordingHistory.load();
+    const section = document.getElementById('recent-section')!;
+    const list = document.getElementById('recent-list')!;
+
+    if (history.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = '';
+
+    history.forEach(rec => {
+      const item = document.createElement('div');
+      item.className = 'recording-item';
+
+      const date = new Date(rec.timestamp);
+      const dateStr = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+      item.innerHTML = `
+        <div class="recording-info">
+          <span class="recording-filename">${rec.filename}</span>
+          <span class="recording-meta">${dateStr} · ${this.formatSize(rec.size)} · ${rec.duration}</span>
+        </div>
+        <div class="recording-actions">
+          <button class="rec-action-btn reveal-btn">Show</button>
+          <button class="rec-action-btn delete-btn">Del</button>
+        </div>
+      `;
+
+      item.querySelector('.reveal-btn')!.addEventListener('click', () => {
+        window.electronAPI.revealFile(rec.path);
+      });
+
+      item.querySelector('.delete-btn')!.addEventListener('click', async () => {
+        await window.electronAPI.deleteFile(rec.path);
+        RecordingHistory.remove(rec.path);
+        this.refreshRecentList();
+      });
+
+      list.appendChild(item);
+    });
+  }
+
+  private formatSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
   private cleanup() {
