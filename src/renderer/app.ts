@@ -336,6 +336,9 @@ class RecorderApp {
         ...mixedAudio.getAudioTracks(),
       ]);
 
+      // Countdown before recording starts
+      await this.showCountdown();
+
       this.recordedChunks = [];
       const preset = QUALITY_PRESETS[this.selectedQuality];
       this.mediaRecorder = new MediaRecorder(combined, {
@@ -388,6 +391,23 @@ class RecorderApp {
       this.setStatus('Failed to save recording', '');
     }
     this.cleanup();
+  }
+
+  private async showCountdown(): Promise<void> {
+    const el = document.getElementById('countdown')!;
+    el.style.display = 'block';
+    this.setStatus('Starting in...', '');
+
+    for (let i = 3; i > 0; i--) {
+      el.textContent = String(i);
+      el.classList.remove('active');
+      void el.offsetWidth;
+      el.classList.add('active');
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
+    el.style.display = 'none';
+    el.classList.remove('active');
   }
 
   private cleanup() {
