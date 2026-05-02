@@ -139,6 +139,42 @@ input[type="checkbox"] {
   accent-color: #007AFF;
 }
 
+#audio-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.audio-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meter-label {
+  font-size: 11px;
+  color: #666;
+  width: 42px;
+  flex-shrink: 0;
+}
+
+.meter-bar {
+  flex: 1;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #33cc66 0%, #cccc33 60%, #cc3333 100%);
+  border-radius: 3px;
+  transition: width 0.06s linear;
+}
+
 #controls {
   display: flex;
   gap: 10px;

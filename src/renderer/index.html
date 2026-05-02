@@ -32,6 +32,16 @@
         <label for="mic-gain">Mic Volume</label>
         <input type="range" id="mic-gain" min="0" max="100" value="80">
       </div>
+      <div id="audio-meters" style="display: none;">
+        <div class="audio-meter">
+          <span class="meter-label">System</span>
+          <div class="meter-bar"><div class="meter-fill" id="system-meter"></div></div>
+        </div>
+        <div class="audio-meter">
+          <span class="meter-label">Mic</span>
+          <div class="meter-bar"><div class="meter-fill" id="mic-meter"></div></div>
+        </div>
+      </div>
     </section>
 
     <section id="controls">

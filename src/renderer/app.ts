@@ -44,17 +44,49 @@ interface DisplayInfo {
   bounds: { width: number; height: number; x: number; y: number };
 }
 
+class AudioAnalyzer {
+  private analyser: AnalyserNode;
+  private dataArray: Uint8Array<ArrayBuffer>;
+  private rafId: number | null = null;
+
+  constructor(ctx: AudioContext, source: AudioNode) {
+    this.analyser = ctx.createAnalyser();
+    this.analyser.fftSize = 256;
+    source.connect(this.analyser);
+    const buf = new ArrayBuffer(this.analyser.frequencyBinCount);
+    this.dataArray = new Uint8Array(buf);
+  }
+
+  start(onUpdate: (level: number) => void) {
+    const tick = () => {
+      this.analyser.getByteFrequencyData(this.dataArray);
+      const avg = this.dataArray.reduce((a, b) => a + b, 0) / this.dataArray.length;
+      onUpdate(Math.round((avg / 255) * 100));
+      this.rafId = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  stop() {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+  }
+}
+
 class AudioMixer {
   private ctx: AudioContext;
   private destination: MediaStreamAudioDestinationNode;
   private gains: Map<string, GainNode> = new Map();
+  private analyzers: AudioAnalyzer[] = [];
 
   constructor() {
     this.ctx = new AudioContext();
     this.destination = this.ctx.createMediaStreamDestination();
   }
 
-  addSource(label: string, stream: MediaStream, gain = 1.0) {
+  addSource(label: string, stream: MediaStream, gain = 1.0, onLevel?: (level: number) => void) {
     const tracks = stream.getAudioTracks();
     if (tracks.length === 0) return;
     const source = this.ctx.createMediaStreamSource(new MediaStream(tracks));
@@ -63,6 +95,12 @@ class AudioMixer {
     source.connect(gainNode);
     gainNode.connect(this.destination);
     this.gains.set(label, gainNode);
+
+    if (onLevel) {
+      const analyzer = new AudioAnalyzer(this.ctx, gainNode);
+      analyzer.start(onLevel);
+      this.analyzers.push(analyzer);
+    }
   }
 
   setGain(label: string, value: number) {
@@ -71,7 +109,12 @@ class AudioMixer {
   }
 
   getOutputStream() { return this.destination.stream; }
-  close() { this.ctx.close(); }
+
+  close() {
+    this.analyzers.forEach(a => a.stop());
+    this.analyzers = [];
+    this.ctx.close();
+  }
 }
 
 class RecorderApp {
@@ -239,18 +282,26 @@ class RecorderApp {
       this.setStatus('Select the screen to record in the picker...', '');
       this.audioMixer = new AudioMixer();
 
+      const systemMeterEl = document.getElementById('system-meter')!;
+      const micMeterEl = document.getElementById('mic-meter')!;
+      document.getElementById('audio-meters')!.style.display = 'flex';
+
       const screenStream = await this.captureScreen(systemAudioEnabled);
       this.activeStreams.push(screenStream);
 
       if (systemAudioEnabled && screenStream.getAudioTracks().length > 0) {
-        this.audioMixer.addSource('system', screenStream);
+        this.audioMixer.addSource('system', screenStream, 1.0, (level) => {
+          systemMeterEl.style.width = level + '%';
+        });
       }
 
       if (micEnabled) {
         try {
           const micStream = await this.captureMicrophone();
           this.activeStreams.push(micStream);
-          this.audioMixer.addSource('microphone', micStream, micGainValue);
+          this.audioMixer.addSource('microphone', micStream, micGainValue, (level) => {
+            micMeterEl.style.width = level + '%';
+          });
         } catch {
           console.warn('Microphone access denied');
         }
@@ -320,6 +371,9 @@ class RecorderApp {
     this.activeStreams = [];
     this.audioMixer?.close();
     this.audioMixer = null;
+    document.getElementById('audio-meters')!.style.display = 'none';
+    document.getElementById('system-meter')!.style.width = '0%';
+    document.getElementById('mic-meter')!.style.width = '0%';
   }
 
   private setStatus(text: string, cls: string) {
