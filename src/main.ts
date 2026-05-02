@@ -73,17 +73,24 @@ ipcMain.handle('get-desktop-sources', async () => {
   }));
 });
 
-ipcMain.handle('save-recording', async (_event, { buffer, filename }) => {
-  const documentsPath = app.getPath('documents');
-  const outputPath = path.join(documentsPath, filename);
+ipcMain.handle('save-recording', async (_event, { buffer, filename, folder }) => {
+  const outputDir = folder || app.getPath('documents');
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  const outputPath = path.join(outputDir, filename);
   fs.writeFileSync(outputPath, Buffer.from(buffer));
   return { success: true, path: outputPath };
 });
 
-ipcMain.handle('pick-save-location', async () => {
-  const result = await dialog.showSaveDialog({
-    defaultPath: path.join(app.getPath('documents'), `recording-${Date.now()}.webm`),
-    filters: [{ name: 'Video', extensions: ['webm'] }],
+ipcMain.handle('pick-output-folder', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory', 'createDirectory'],
+    defaultPath: app.getPath('documents'),
   });
-  return result.canceled ? null : result.filePath;
+  return result.canceled ? null : result.filePaths[0];
+});
+
+ipcMain.handle('get-default-output', () => {
+  return app.getPath('documents');
 });

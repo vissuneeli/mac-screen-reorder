@@ -8,6 +8,7 @@ class Settings {
       micGain: 80,
       lastSelectedDisplay: null as string | null,
       qualityLevel: 'medium' as 'low' | 'medium' | 'high',
+      outputFolder: null as string | null,
     };
   }
 
@@ -37,6 +38,9 @@ class Settings {
   }
   static updateQuality(level: 'low' | 'medium' | 'high') {
     const s = this.load(); s.qualityLevel = level; this.save(s);
+  }
+  static updateOutputFolder(folder: string | null) {
+    const s = this.load(); s.outputFolder = folder; this.save(s);
   }
 }
 
@@ -132,6 +136,8 @@ class RecorderApp {
   private displays: DisplayInfo[] = [];
   private selectedDisplayId: string | null = null;
   private selectedQuality: QualityLevel = 'medium';
+  private outputFolder: string | null = null;
+  private defaultOutputPath = '';
   private isRecording = false;
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
@@ -165,7 +171,10 @@ class RecorderApp {
       });
     });
 
+    document.getElementById('output-btn')!.addEventListener('click', () => this.pickOutputFolder());
+
     // Load displays, then restore saved settings
+    this.defaultOutputPath = await window.electronAPI.getDefaultOutput();
     await this.loadDisplays();
     this.applySettings();
   }
@@ -180,6 +189,9 @@ class RecorderApp {
     this.selectedQuality = settings.qualityLevel;
     const qualityRadio = document.querySelector<HTMLInputElement>(`input[name="quality"][value="${settings.qualityLevel}"]`);
     if (qualityRadio) qualityRadio.checked = true;
+
+    this.outputFolder = settings.outputFolder;
+    this.updateOutputDisplay();
 
     if (settings.lastSelectedDisplay) {
       const radio = document.querySelector(
@@ -385,12 +397,32 @@ class RecorderApp {
     const buffer = await blob.arrayBuffer();
     const filename = `recording-${Date.now()}.webm`;
     try {
-      const result = await window.electronAPI.saveRecording({ buffer, filename });
+      const result = await window.electronAPI.saveRecording({
+        buffer,
+        filename,
+        folder: this.outputFolder || undefined,
+      });
       this.setStatus(`Saved → ${result.path}`, 'saved');
     } catch {
       this.setStatus('Failed to save recording', '');
     }
     this.cleanup();
+  }
+
+  private async pickOutputFolder() {
+    const folder = await window.electronAPI.pickOutputFolder();
+    if (folder) {
+      this.outputFolder = folder;
+      Settings.updateOutputFolder(folder);
+      this.updateOutputDisplay();
+    }
+  }
+
+  private updateOutputDisplay() {
+    const el = document.getElementById('output-path')!;
+    const fullPath = this.outputFolder || this.defaultOutputPath;
+    const homeParts = this.defaultOutputPath.split('/').slice(0, -1).join('/');
+    el.textContent = fullPath.replace(homeParts, '~');
   }
 
   private async showCountdown(): Promise<void> {

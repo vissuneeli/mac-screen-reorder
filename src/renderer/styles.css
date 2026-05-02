@@ -175,6 +175,35 @@ input[type="checkbox"] {
   transition: width 0.06s linear;
 }
 
+.output-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.output-path {
+  flex: 1;
+  padding: 8px 10px;
+  background: #333;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.output-browse {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  font-size: 12px;
+  background: #007AFF;
+}
+
+.output-browse:hover {
+  background: #0051D5;
+}
+
 .quality-options {
   display: flex;
   flex-direction: column;
