@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "dist/main.js",
   "scripts": {
-    "copy-assets": "cp src/renderer/index.html dist/renderer/index.html && cp src/renderer/styles.css dist/renderer/styles.css",
+    "copy-assets": "cp src/renderer/index.html dist/renderer/index.html && cp src/renderer/styles.css dist/renderer/styles.css && mkdir -p dist/assets && cp src/assets/tray-icon.png dist/assets/ && cp src/assets/tray-icon@2x.png dist/assets/",
     "typecheck": "tsc --noEmit",
     "bundle": "esbuild src/renderer/app.ts --bundle --outfile=dist/renderer/app.js --platform=browser && esbuild src/main.ts --bundle --outfile=dist/main.js --platform=node --external:electron && esbuild src/preload.ts --bundle --outfile=dist/preload.js --platform=node --external:electron",
     "dev": "npm run typecheck && npm run bundle && npm run copy-assets && env -u ELECTRON_RUN_AS_NODE electron .",

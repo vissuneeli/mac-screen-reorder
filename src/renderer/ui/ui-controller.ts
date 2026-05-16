@@ -18,6 +18,8 @@ interface FileAPI {
   getDefaultOutput(): Promise<string>;
   revealFile(path: string): Promise<{ exists: boolean }>;
   deleteFile(path: string): Promise<{ success: boolean }>;
+  updateTray(state: { isRecording: boolean; isPaused: boolean }): Promise<void>;
+  onTrayCommand(callback: (command: string) => void): void;
 }
 
 export class UIController {
@@ -36,6 +38,11 @@ export class UIController {
     this.defaultOutputPath = await this.api.getDefaultOutput();
 
     this.wireRecordingCallbacks();
+
+    this.api.onTrayCommand((command) => {
+      if (command === 'stop') this.handleStop();
+      else if (command === 'toggle-pause') this.handlePause();
+    });
 
     const displayListEl = document.getElementById('display-list')!;
     displayListEl.innerHTML = '<p class="loading">Loading displays...</p>';
@@ -58,6 +65,7 @@ export class UIController {
       this.setBusy();
       this.status.stopTimer();
       this.status.setStatus('Saving...', '');
+      this.api.updateTray({ isRecording: false, isPaused: false });
     };
 
     this.recording.onSaved = (entry: RecordingEntry) => {
@@ -69,6 +77,7 @@ export class UIController {
 
     this.recording.onError = (message: string) => {
       this.status.setStatus(message, '');
+      this.api.updateTray({ isRecording: false, isPaused: false });
       this.setIdle();
     };
 
@@ -141,6 +150,7 @@ export class UIController {
       this.status.startTimer();
       this.setRecording();
       this.status.setStatus('Recording...', 'recording');
+      this.api.updateTray({ isRecording: true, isPaused: false });
     } catch (err) {
       this.status.setStatus((err as Error).message, '');
       this.setIdle();
@@ -153,12 +163,14 @@ export class UIController {
       this.status.resumeTimer(this.elapsedAtPause);
       (document.getElementById('pause-btn') as HTMLButtonElement).innerHTML = `${ICON.pause} Pause`;
       this.status.setStatus('Recording...', 'recording');
+      this.api.updateTray({ isRecording: true, isPaused: false });
     } else {
       this.elapsedAtPause = this.status.getElapsedMs();
       this.recording.pause();
       this.status.pauseTimer();
       (document.getElementById('pause-btn') as HTMLButtonElement).innerHTML = `${ICON.resume} Resume`;
       this.status.setStatus('Paused', 'paused');
+      this.api.updateTray({ isRecording: true, isPaused: true });
     }
   }
 

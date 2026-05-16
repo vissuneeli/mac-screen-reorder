@@ -16,4 +16,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   finalizeRecording: (data: { sessionId: string; filename: string; folder?: string }) =>
     ipcRenderer.invoke('finalize-recording', data),
   cleanupSession: (sessionId: string) => ipcRenderer.invoke('cleanup-session', sessionId),
+  updateTray: (state: { isRecording: boolean; isPaused: boolean }) =>
+    ipcRenderer.invoke('tray-update', state),
+  onTrayCommand: (callback: (command: string) => void) =>
+    ipcRenderer.on('tray-command', (_event, command) => callback(command)),
 });

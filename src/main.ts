@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen, systemPreferences, dialog, shell, desktopCapturer } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, systemPreferences, dialog, shell, desktopCapturer, Tray, Menu, nativeImage } from 'electron';
 import path from 'path';
 import fs from 'fs';
 
@@ -6,6 +6,86 @@ let mainWindow: BrowserWindow | null = null;
 
 // Active recording sessions for incremental chunk streaming
 const activeSessions = new Map<string, { tmpPath: string }>();
+
+// ── Tray state ────────────────────────────────────────────────────────────
+
+let tray: Tray | null = null;
+let trayInterval: ReturnType<typeof setInterval> | null = null;
+let trayRecState = { isRecording: false, isPaused: false };
+let recStartedAt: number | null = null;
+let pausedAt: number | null = null;
+let pauseAccum = 0;
+
+function buildTrayMenu(): void {
+  if (!tray) return;
+  if (!trayRecState.isRecording) {
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: 'Screen Recorder', enabled: false },
+      { type: 'separator' },
+      { label: 'Open', click: () => { mainWindow?.show(); mainWindow?.focus(); } },
+      { type: 'separator' },
+      { label: 'Quit', click: () => app.quit() },
+    ]));
+  } else {
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: trayRecState.isPaused ? 'Paused' : 'Recording…', enabled: false },
+      { type: 'separator' },
+      {
+        label: trayRecState.isPaused ? 'Resume' : 'Pause',
+        click: () => mainWindow?.webContents.send('tray-command', 'toggle-pause'),
+      },
+      { label: 'Stop Recording', click: () => mainWindow?.webContents.send('tray-command', 'stop') },
+      { type: 'separator' },
+      { label: 'Quit', click: () => app.quit() },
+    ]));
+  }
+}
+
+function refreshTrayTitle(): void {
+  if (!tray || !recStartedAt) { tray?.setTitle(''); return; }
+  const now = Date.now();
+  const frozen = trayRecState.isPaused && pausedAt ? now - pausedAt : 0;
+  const ms = Math.max(0, now - recStartedAt - pauseAccum - frozen);
+  const s  = Math.floor(ms / 1000);
+  const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  tray.setTitle(trayRecState.isPaused ? ` ⏸ ${hh}:${mm}:${ss}` : ` ● ${hh}:${mm}:${ss}`);
+}
+
+function createTray(): void {
+  const icon = nativeImage.createFromPath(path.join(__dirname, 'assets/tray-icon.png'));
+  icon.setTemplateImage(true);
+  tray = new Tray(icon);
+  tray.setToolTip('Screen Recorder');
+  buildTrayMenu();
+  tray.on('click', () => { mainWindow?.show(); mainWindow?.focus(); });
+}
+
+function registerTrayHandlers(): void {
+  ipcMain.handle('tray-update', (_event, state: { isRecording: boolean; isPaused: boolean }) => {
+    const prev = trayRecState;
+    trayRecState = state;
+
+    if (!state.isRecording) {
+      if (trayInterval) { clearInterval(trayInterval); trayInterval = null; }
+      recStartedAt = null; pausedAt = null; pauseAccum = 0;
+    } else {
+      if (!prev.isRecording) {
+        recStartedAt = Date.now(); pauseAccum = 0; pausedAt = null;
+      }
+      if (state.isPaused && !prev.isPaused) {
+        pausedAt = Date.now();
+      } else if (!state.isPaused && prev.isPaused && pausedAt) {
+        pauseAccum += Date.now() - pausedAt; pausedAt = null;
+      }
+      if (!trayInterval) trayInterval = setInterval(refreshTrayTitle, 1000);
+    }
+
+    refreshTrayTitle();
+    buildTrayMenu();
+  });
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -33,7 +113,9 @@ app.whenReady().then(async () => {
   registerRecordingHandlers();
   registerFileHandlers();
   registerPermissionHandlers();
+  registerTrayHandlers();
   createWindow();
+  createTray();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

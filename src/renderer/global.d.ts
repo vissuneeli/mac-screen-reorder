@@ -32,7 +32,12 @@ interface PermissionAPI {
   getDefaultOutput(): Promise<string>;
 }
 
-interface ElectronAPI extends DisplayAPI, RecordingAPI, FileAPI, PermissionAPI {}
+interface TrayAPI {
+  updateTray(state: { isRecording: boolean; isPaused: boolean }): Promise<void>;
+  onTrayCommand(callback: (command: string) => void): void;
+}
+
+interface ElectronAPI extends DisplayAPI, RecordingAPI, FileAPI, PermissionAPI, TrayAPI {}
 
 interface Window {
   electronAPI: ElectronAPI;
