@@ -171,6 +171,8 @@ class RecorderApp {
   private outputFolder: string | null = null;
   private defaultOutputPath = '';
   private isRecording = false;
+  private isPaused = false;
+  private elapsedAtPause = 0;
   private mediaRecorder: MediaRecorder | null = null;
   private currentSessionId: string | null = null;
   private chunkWriteQueue: Promise<void> = Promise.resolve();
@@ -181,6 +183,7 @@ class RecorderApp {
 
   async init() {
     document.getElementById('start-btn')!.addEventListener('click', () => this.startRecording());
+    document.getElementById('pause-btn')!.addEventListener('click', () => this.togglePause());
     document.getElementById('stop-btn')!.addEventListener('click', () => this.stopRecording());
 
     const systemAudioCb = document.getElementById('capture-system-audio') as HTMLInputElement;
@@ -415,8 +418,10 @@ class RecorderApp {
 
       this.mediaRecorder.start(1000);
       this.isRecording = true;
+      this.isPaused = false;
       this.startTimer();
       document.getElementById('start-btn')!.setAttribute('disabled', '');
+      document.getElementById('pause-btn')!.removeAttribute('disabled');
       document.getElementById('stop-btn')!.removeAttribute('disabled');
       this.setStatus('Recording...', 'recording');
 
@@ -431,13 +436,38 @@ class RecorderApp {
     }
   }
 
+  private togglePause() {
+    if (!this.isRecording || !this.mediaRecorder) return;
+    if (this.isPaused) {
+      this.mediaRecorder.resume();
+      this.isPaused = false;
+      this.startTime = Date.now() - this.elapsedAtPause;
+      this.startTimerInterval();
+      document.getElementById('pause-btn')!.textContent = 'Pause';
+      this.setStatus('Recording...', 'recording');
+    } else {
+      this.mediaRecorder.pause();
+      this.isPaused = true;
+      this.elapsedAtPause = Date.now() - this.startTime;
+      this.stopTimerInterval();
+      document.getElementById('pause-btn')!.textContent = 'Resume';
+      this.setStatus('Paused', 'paused');
+    }
+  }
+
   private async stopRecording() {
     if (!this.mediaRecorder || !this.isRecording) return;
+    if (this.isPaused) {
+      this.mediaRecorder.resume();
+      this.isPaused = false;
+    }
     this.setStatus('Saving...', '');
     this.mediaRecorder.stop();
     this.isRecording = false;
     this.stopTimer();
     document.getElementById('start-btn')!.removeAttribute('disabled');
+    document.getElementById('pause-btn')!.setAttribute('disabled', '');
+    document.getElementById('pause-btn')!.textContent = 'Pause';
     document.getElementById('stop-btn')!.setAttribute('disabled', '');
   }
 
@@ -579,8 +609,13 @@ class RecorderApp {
 
   private startTimer() {
     this.startTime = Date.now();
+    document.getElementById('timer')!.style.display = 'block';
+    this.startTimerInterval();
+  }
+
+  private startTimerInterval() {
+    if (this.timerInterval !== null) clearInterval(this.timerInterval);
     const el = document.getElementById('timer')!;
-    el.style.display = 'block';
     this.timerInterval = window.setInterval(() => {
       const ms = Date.now() - this.startTime;
       const h = Math.floor(ms / 3600000);
@@ -590,8 +625,12 @@ class RecorderApp {
     }, 1000);
   }
 
-  private stopTimer() {
+  private stopTimerInterval() {
     if (this.timerInterval !== null) { clearInterval(this.timerInterval); this.timerInterval = null; }
+  }
+
+  private stopTimer() {
+    this.stopTimerInterval();
     document.getElementById('timer')!.style.display = 'none';
   }
 }

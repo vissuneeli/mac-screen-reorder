@@ -247,6 +247,15 @@ button {
   background: #aa2222;
 }
 
+#pause-btn {
+  background: #3a6ea8;
+  color: white;
+}
+
+#pause-btn:hover:not(:disabled) {
+  background: #2d5a8e;
+}
+
 #stop-btn {
   background: #444;
   color: white;
@@ -278,6 +287,10 @@ button:disabled {
 
 #status-text.saved {
   color: #33cc66;
+}
+
+#status-text.paused {
+  color: #cc8800;
 }
 
 #countdown {
