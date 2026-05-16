@@ -4,6 +4,9 @@ import fs from 'fs';
 
 let mainWindow: BrowserWindow | null = null;
 
+// Active recording sessions for incremental chunk streaming
+const activeSessions = new Map<string, { tmpPath: string }>();
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 520,
@@ -81,6 +84,47 @@ ipcMain.handle('save-recording', async (_event, { buffer, filename, folder }) =>
   const outputPath = path.join(outputDir, filename);
   fs.writeFileSync(outputPath, Buffer.from(buffer));
   return { success: true, path: outputPath };
+});
+
+ipcMain.handle('stream-chunk', (_event, { sessionId, chunk, folder }: { sessionId: string; chunk: ArrayBuffer; folder?: string }) => {
+  const outputDir = folder || app.getPath('documents');
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  const session = activeSessions.get(sessionId);
+  if (!session) {
+    const tmpPath = path.join(outputDir, `${sessionId}.tmp`);
+    fs.writeFileSync(tmpPath, Buffer.from(chunk));
+    activeSessions.set(sessionId, { tmpPath });
+  } else {
+    fs.appendFileSync(session.tmpPath, Buffer.from(chunk));
+  }
+  return { success: true };
+});
+
+ipcMain.handle('finalize-recording', (_event, { sessionId, filename, folder }: { sessionId: string; filename: string; folder?: string }) => {
+  const session = activeSessions.get(sessionId);
+  if (!session) return { success: false, error: 'Session not found' };
+  const outputDir = folder || app.getPath('documents');
+  const finalPath = path.join(outputDir, filename);
+  try {
+    fs.renameSync(session.tmpPath, finalPath);
+    activeSessions.delete(sessionId);
+    const stats = fs.statSync(finalPath);
+    return { success: true, path: finalPath, size: stats.size };
+  } catch (err) {
+    return { success: false, error: (err as Error).message };
+  }
+});
+
+ipcMain.handle('cleanup-session', (_event, sessionId: string) => {
+  const session = activeSessions.get(sessionId);
+  if (session) {
+    try {
+      if (fs.existsSync(session.tmpPath)) fs.unlinkSync(session.tmpPath);
+    } catch { /* ignore */ }
+    activeSessions.delete(sessionId);
+  }
 });
 
 ipcMain.handle('pick-output-folder', async () => {

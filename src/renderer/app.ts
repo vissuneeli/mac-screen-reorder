@@ -172,7 +172,8 @@ class RecorderApp {
   private defaultOutputPath = '';
   private isRecording = false;
   private mediaRecorder: MediaRecorder | null = null;
-  private recordedChunks: Blob[] = [];
+  private currentSessionId: string | null = null;
+  private chunkWriteQueue: Promise<void> = Promise.resolve();
   private audioMixer: AudioMixer | null = null;
   private activeStreams: MediaStream[] = [];
   private timerInterval: number | null = null;
@@ -384,7 +385,8 @@ class RecorderApp {
       // Countdown before recording starts
       await this.showCountdown();
 
-      this.recordedChunks = [];
+      this.currentSessionId = `session-${Date.now()}`;
+      this.chunkWriteQueue = Promise.resolve();
       const preset = QUALITY_PRESETS[this.selectedQuality];
       this.mediaRecorder = new MediaRecorder(combined, {
         mimeType: 'video/webm;codecs=vp9,opus',
@@ -392,7 +394,14 @@ class RecorderApp {
       });
 
       this.mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) this.recordedChunks.push(e.data);
+        if (e.data.size > 0 && this.currentSessionId) {
+          const sessionId = this.currentSessionId;
+          const folder = this.outputFolder || undefined;
+          this.chunkWriteQueue = this.chunkWriteQueue.then(async () => {
+            const buffer = await e.data.arrayBuffer();
+            await window.electronAPI.streamChunk({ sessionId, chunk: buffer, folder });
+          });
+        }
       };
       this.mediaRecorder.onstop = () => this.handleStop();
 
@@ -414,6 +423,10 @@ class RecorderApp {
     } catch (err) {
       console.error(err);
       this.setStatus(`${(err as Error).message}`, '');
+      if (this.currentSessionId) {
+        window.electronAPI.cleanupSession(this.currentSessionId);
+        this.currentSessionId = null;
+      }
       this.cleanup();
     }
   }
@@ -429,30 +442,34 @@ class RecorderApp {
   }
 
   private async handleStop() {
-    const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
-    const buffer = await blob.arrayBuffer();
     const filename = `recording-${Date.now()}.webm`;
     const duration = document.getElementById('timer')!.textContent || '00:00:00';
+    const sessionId = this.currentSessionId;
     try {
-      const result = await window.electronAPI.saveRecording({
-        buffer,
+      // Wait for all in-flight chunk writes to complete before finalizing
+      await this.chunkWriteQueue;
+      if (!sessionId) throw new Error('No active session');
+      const result = await window.electronAPI.finalizeRecording({
+        sessionId,
         filename,
         folder: this.outputFolder || undefined,
       });
+      if (!result.success) throw new Error(result.error || 'Failed to save');
 
       RecordingHistory.add({
         filename,
         path: result.path,
         timestamp: Date.now(),
-        size: buffer.byteLength,
+        size: result.size,
         duration,
       });
       this.refreshRecentList();
-
       this.setStatus(`Saved → ${result.path}`, 'saved');
     } catch {
       this.setStatus('Failed to save recording', '');
+      if (sessionId) window.electronAPI.cleanupSession(sessionId);
     }
+    this.currentSessionId = null;
     this.cleanup();
   }
 

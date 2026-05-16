@@ -10,4 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getDefaultOutput: () => ipcRenderer.invoke('get-default-output'),
   revealFile: (path: string) => ipcRenderer.invoke('reveal-file', path),
   deleteFile: (path: string) => ipcRenderer.invoke('delete-file', path),
+  streamChunk: (data: { sessionId: string; chunk: ArrayBuffer; folder?: string }) =>
+    ipcRenderer.invoke('stream-chunk', data),
+  finalizeRecording: (data: { sessionId: string; filename: string; folder?: string }) =>
+    ipcRenderer.invoke('finalize-recording', data),
+  cleanupSession: (sessionId: string) => ipcRenderer.invoke('cleanup-session', sessionId),
 });
