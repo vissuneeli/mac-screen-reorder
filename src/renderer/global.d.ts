@@ -21,6 +21,7 @@ interface RecordingAPI {
 }
 
 interface FileAPI {
+  checkFile(path: string): Promise<{ exists: boolean }>;
   revealFile(path: string): Promise<{ exists: boolean }>;
   deleteFile(path: string): Promise<{ success: boolean }>;
 }

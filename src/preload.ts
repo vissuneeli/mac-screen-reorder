@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('save-recording', data),
   pickOutputFolder: () => ipcRenderer.invoke('pick-output-folder'),
   getDefaultOutput: () => ipcRenderer.invoke('get-default-output'),
+  checkFile: (path: string) => ipcRenderer.invoke('check-file', path),
   revealFile: (path: string) => ipcRenderer.invoke('reveal-file', path),
   deleteFile: (path: string) => ipcRenderer.invoke('delete-file', path),
   streamChunk: (data: { sessionId: string; chunk: ArrayBuffer; folder?: string }) =>

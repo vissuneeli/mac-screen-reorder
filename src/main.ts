@@ -118,6 +118,10 @@ function registerRecordingHandlers() {
 // ── File handlers ─────────────────────────────────────────────────────────
 
 function registerFileHandlers() {
+  ipcMain.handle('check-file', (_event, filePath: string) => {
+    return { exists: fs.existsSync(filePath) };
+  });
+
   ipcMain.handle('reveal-file', (_event, filePath: string) => {
     const exists = fs.existsSync(filePath);
     if (exists) shell.showItemInFolder(filePath);

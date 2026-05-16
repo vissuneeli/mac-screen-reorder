@@ -13,6 +13,7 @@ const ICON = {
 };
 
 interface FileAPI {
+  checkFile(path: string): Promise<{ exists: boolean }>;
   pickOutputFolder(): Promise<string | null>;
   getDefaultOutput(): Promise<string>;
   revealFile(path: string): Promise<{ exists: boolean }>;
@@ -252,7 +253,7 @@ export class UIController {
 
   // ── Recent recordings list ───────────────────────────────────────────────
 
-  private refreshRecentList(): void {
+  private async refreshRecentList(): Promise<void> {
     const history = HistoryManager.load();
     const section = document.getElementById('recent-section')!;
     const list = document.getElementById('recent-list')!;
@@ -261,30 +262,52 @@ export class UIController {
     section.style.display = 'block';
     list.innerHTML = '';
 
-    history.forEach(rec => {
+    // Batch-check all file paths in parallel
+    const existenceResults = await Promise.all(history.map(rec => this.api.checkFile(rec.path)));
+
+    history.forEach((rec, i) => {
+      const exists = existenceResults[i].exists;
       const item = document.createElement('div');
-      item.className = 'recording-item';
+      item.className = 'recording-item' + (exists ? '' : ' recording-missing');
       const date = new Date(rec.timestamp);
       const dateStr = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-      item.innerHTML = `
-        <div class="recording-info">
-          <span class="recording-filename">${rec.filename}</span>
-          <span class="recording-meta">${dateStr} · ${this.formatSize(rec.size)} · ${rec.duration}</span>
-        </div>
-        <div class="recording-actions">
-          <button class="rec-action-btn reveal-btn" title="Reveal in Finder">${ICON.reveal}</button>
-          <button class="rec-action-btn delete-btn" title="Move to Trash">${ICON.trash}</button>
-        </div>
-      `;
-      item.querySelector('.reveal-btn')!.addEventListener('click', async () => {
-        const result = await this.api.revealFile(rec.path);
-        if (!result.exists) { HistoryManager.remove(rec.path); this.refreshRecentList(); }
-      });
-      item.querySelector('.delete-btn')!.addEventListener('click', async () => {
-        await this.api.deleteFile(rec.path);
-        HistoryManager.remove(rec.path);
-        this.refreshRecentList();
-      });
+
+      if (exists) {
+        item.innerHTML = `
+          <div class="recording-info">
+            <span class="recording-filename">${rec.filename}</span>
+            <span class="recording-meta">${dateStr} · ${this.formatSize(rec.size)} · ${rec.duration}</span>
+          </div>
+          <div class="recording-actions">
+            <button class="rec-action-btn reveal-btn" title="Reveal in Finder">${ICON.reveal}</button>
+            <button class="rec-action-btn delete-btn" title="Move to Trash">${ICON.trash}</button>
+          </div>
+        `;
+        item.querySelector('.reveal-btn')!.addEventListener('click', async () => {
+          const result = await this.api.revealFile(rec.path);
+          if (!result.exists) { HistoryManager.remove(rec.path); this.refreshRecentList(); }
+        });
+        item.querySelector('.delete-btn')!.addEventListener('click', async () => {
+          await this.api.deleteFile(rec.path);
+          HistoryManager.remove(rec.path);
+          this.refreshRecentList();
+        });
+      } else {
+        item.innerHTML = `
+          <div class="recording-info">
+            <span class="recording-filename">${rec.filename} <span class="badge-missing">File missing</span></span>
+            <span class="recording-meta">${dateStr} · ${this.formatSize(rec.size)} · ${rec.duration}</span>
+          </div>
+          <div class="recording-actions">
+            <button class="rec-action-btn remove-btn" title="Remove from list">${ICON.trash}</button>
+          </div>
+        `;
+        item.querySelector('.remove-btn')!.addEventListener('click', () => {
+          HistoryManager.remove(rec.path);
+          this.refreshRecentList();
+        });
+      }
+
       list.appendChild(item);
     });
   }

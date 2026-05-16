@@ -337,6 +337,23 @@ button:disabled {
   border-bottom: none;
 }
 
+.recording-item.recording-missing {
+  opacity: 0.55;
+}
+
+.badge-missing {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  background: #5a1a1a;
+  color: #ff8080;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .recording-info {
   flex: 1;
   min-width: 0;
