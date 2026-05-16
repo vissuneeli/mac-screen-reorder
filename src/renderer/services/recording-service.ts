@@ -13,6 +13,7 @@ export interface RecordingStartOpts {
   systemAudio: boolean;
   micEnabled: boolean;
   micGain: number;
+  micDeviceId?: string | null;
   outputFolder?: string;
 }
 
@@ -70,7 +71,7 @@ export class RecordingService {
 
       if (opts.micEnabled) {
         try {
-          const micStream = await this.captureMicrophone();
+          const micStream = await this.captureMicrophone(opts.micDeviceId ?? undefined);
           this.activeStreams.push(micStream);
           this.audioMixer.addSource('microphone', micStream, opts.micGain / 100, (level) => this.onMicLevel?.(level));
         } catch {
@@ -195,10 +196,10 @@ export class RecordingService {
     }
   }
 
-  private captureMicrophone(): Promise<MediaStream> {
-    return navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 48000 },
-    });
+  private captureMicrophone(deviceId?: string): Promise<MediaStream> {
+    const audio: MediaTrackConstraints = { echoCancellation: true, noiseSuppression: true, sampleRate: 48000 };
+    if (deviceId) audio.deviceId = { exact: deviceId };
+    return navigator.mediaDevices.getUserMedia({ audio });
   }
 
   private async handleStop(): Promise<void> {

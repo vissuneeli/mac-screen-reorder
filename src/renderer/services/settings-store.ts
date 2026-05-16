@@ -8,6 +8,7 @@ export class SettingsStore {
       systemAudioEnabled: true,
       microphoneEnabled: true,
       micGain: 80,
+      micDeviceId: null,
       lastSelectedDisplay: null,
       qualityLevel: 'medium' as QualityLevel,
       outputFolder: null,

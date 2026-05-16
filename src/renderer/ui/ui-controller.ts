@@ -56,6 +56,7 @@ export class UIController {
     this.applySettings();
     this.wireControls();
     this.refreshRecentList();
+    if (SettingsStore.load().microphoneEnabled) this.populateMicDevices();
   }
 
   // ── Recording callbacks ──────────────────────────────────────────────────
@@ -122,13 +123,20 @@ export class UIController {
       SettingsStore.update('systemAudioEnabled', (e.target as HTMLInputElement).checked);
     });
     (document.getElementById('capture-microphone') as HTMLInputElement).addEventListener('change', (e) => {
-      SettingsStore.update('microphoneEnabled', (e.target as HTMLInputElement).checked);
+      const checked = (e.target as HTMLInputElement).checked;
+      SettingsStore.update('microphoneEnabled', checked);
+      document.getElementById('mic-controls')!.style.display = checked ? '' : 'none';
+      if (checked) this.populateMicDevices();
     });
 
     document.querySelectorAll<HTMLInputElement>('input[name="quality"]').forEach(radio => {
       radio.addEventListener('change', () => {
         SettingsStore.update('qualityLevel', radio.value as 'low' | 'medium' | 'high');
       });
+    });
+
+    (document.getElementById('mic-device') as HTMLSelectElement).addEventListener('change', (e) => {
+      SettingsStore.update('micDeviceId', (e.target as HTMLSelectElement).value || null);
     });
   }
 
@@ -145,6 +153,7 @@ export class UIController {
         systemAudio: (document.getElementById('capture-system-audio') as HTMLInputElement).checked,
         micEnabled: (document.getElementById('capture-microphone') as HTMLInputElement).checked,
         micGain: parseInt((document.getElementById('mic-gain') as HTMLInputElement).value),
+        micDeviceId: (document.getElementById('mic-device') as HTMLSelectElement).value || null,
         outputFolder: this.outputFolder ?? undefined,
       });
       this.status.startTimer();
@@ -235,7 +244,9 @@ export class UIController {
   private applySettings(): void {
     const settings = SettingsStore.load();
     (document.getElementById('capture-system-audio') as HTMLInputElement).checked = settings.systemAudioEnabled;
-    (document.getElementById('capture-microphone') as HTMLInputElement).checked = settings.microphoneEnabled;
+    const micEnabled = settings.microphoneEnabled;
+    (document.getElementById('capture-microphone') as HTMLInputElement).checked = micEnabled;
+    document.getElementById('mic-controls')!.style.display = micEnabled ? '' : 'none';
     (document.getElementById('mic-gain') as HTMLInputElement).value = String(settings.micGain);
 
     const qualityRadio = document.querySelector<HTMLInputElement>(`input[name="quality"][value="${settings.qualityLevel}"]`);
@@ -250,6 +261,19 @@ export class UIController {
         radio.checked = true;
         radio.dispatchEvent(new Event('change'));
       }
+    }
+  }
+
+  async populateMicDevices(): Promise<void> {
+    const select = document.getElementById('mic-device') as HTMLSelectElement;
+    const savedId = SettingsStore.load().micDeviceId;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices.filter(d => d.kind === 'audioinput');
+      select.innerHTML = `<option value="">Default microphone</option>` +
+        inputs.map(d => `<option value="${d.deviceId}"${d.deviceId === savedId ? ' selected' : ''}>${d.label || `Microphone ${d.deviceId.slice(0, 6)}`}</option>`).join('');
+    } catch {
+      select.innerHTML = `<option value="">Default microphone</option>`;
     }
   }
 

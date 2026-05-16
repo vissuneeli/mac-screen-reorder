@@ -27,6 +27,7 @@ export interface AppSettings {
   systemAudioEnabled: boolean;
   microphoneEnabled: boolean;
   micGain: number;
+  micDeviceId: string | null;
   lastSelectedDisplay: string | null;
   qualityLevel: QualityLevel;
   outputFolder: string | null;
