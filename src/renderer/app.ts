@@ -337,7 +337,7 @@ class RecorderApp {
   }
 
   private async startRecording() {
-    if (!this.selectedDisplayId && this.displays.length === 0) {
+    if (!this.selectedDisplayId || this.displays.length === 0) {
       this.setStatus('No display selected', '');
       return;
     }
@@ -397,9 +397,12 @@ class RecorderApp {
       this.mediaRecorder.onstop = () => this.handleStop();
 
       // Stop recording if user clicks "Stop sharing" in the browser bar
-      screenStream.getVideoTracks()[0].addEventListener('ended', () => {
-        if (this.isRecording) this.stopRecording();
-      });
+      const videoTrack = screenStream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.addEventListener('ended', () => {
+          if (this.isRecording) this.stopRecording();
+        });
+      }
 
       this.mediaRecorder.start(1000);
       this.isRecording = true;
@@ -522,9 +525,13 @@ class RecorderApp {
       });
 
       item.querySelector('.delete-btn')!.addEventListener('click', async () => {
-        await window.electronAPI.deleteFile(rec.path);
-        RecordingHistory.remove(rec.path);
-        this.refreshRecentList();
+        const result = await window.electronAPI.deleteFile(rec.path);
+        if (result.success) {
+          RecordingHistory.remove(rec.path);
+          this.refreshRecentList();
+        } else {
+          this.setStatus('Failed to delete file', '');
+        }
       });
 
       list.appendChild(item);
