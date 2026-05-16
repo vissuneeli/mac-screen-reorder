@@ -9,6 +9,8 @@ export class SettingsStore {
       microphoneEnabled: true,
       micGain: 80,
       micDeviceId: null,
+      noiseSuppression: true,
+      echoCancellation: true,
       lastSelectedDisplay: null,
       qualityLevel: 'medium' as QualityLevel,
       outputFolder: null,

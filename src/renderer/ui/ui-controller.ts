@@ -138,6 +138,13 @@ export class UIController {
     (document.getElementById('mic-device') as HTMLSelectElement).addEventListener('change', (e) => {
       SettingsStore.update('micDeviceId', (e.target as HTMLSelectElement).value || null);
     });
+
+    (document.getElementById('noise-suppression') as HTMLInputElement).addEventListener('change', (e) => {
+      SettingsStore.update('noiseSuppression', (e.target as HTMLInputElement).checked);
+    });
+    (document.getElementById('echo-cancellation') as HTMLInputElement).addEventListener('change', (e) => {
+      SettingsStore.update('echoCancellation', (e.target as HTMLInputElement).checked);
+    });
   }
 
   // ── Button handlers ──────────────────────────────────────────────────────
@@ -154,6 +161,8 @@ export class UIController {
         micEnabled: (document.getElementById('capture-microphone') as HTMLInputElement).checked,
         micGain: parseInt((document.getElementById('mic-gain') as HTMLInputElement).value),
         micDeviceId: (document.getElementById('mic-device') as HTMLSelectElement).value || null,
+        noiseSuppression: (document.getElementById('noise-suppression') as HTMLInputElement).checked,
+        echoCancellation: (document.getElementById('echo-cancellation') as HTMLInputElement).checked,
         outputFolder: this.outputFolder ?? undefined,
       });
       this.status.startTimer();
@@ -247,6 +256,8 @@ export class UIController {
     const micEnabled = settings.microphoneEnabled;
     (document.getElementById('capture-microphone') as HTMLInputElement).checked = micEnabled;
     document.getElementById('mic-controls')!.style.display = micEnabled ? '' : 'none';
+    (document.getElementById('noise-suppression') as HTMLInputElement).checked = settings.noiseSuppression;
+    (document.getElementById('echo-cancellation') as HTMLInputElement).checked = settings.echoCancellation;
     (document.getElementById('mic-gain') as HTMLInputElement).value = String(settings.micGain);
 
     const qualityRadio = document.querySelector<HTMLInputElement>(`input[name="quality"][value="${settings.qualityLevel}"]`);

@@ -28,6 +28,8 @@ export interface AppSettings {
   microphoneEnabled: boolean;
   micGain: number;
   micDeviceId: string | null;
+  noiseSuppression: boolean;
+  echoCancellation: boolean;
   lastSelectedDisplay: string | null;
   qualityLevel: QualityLevel;
   outputFolder: string | null;
