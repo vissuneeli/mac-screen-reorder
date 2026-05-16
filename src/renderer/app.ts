@@ -567,18 +567,18 @@ class RecorderApp {
         </div>
       `;
 
-      item.querySelector('.reveal-btn')!.addEventListener('click', () => {
-        window.electronAPI.revealFile(rec.path);
+      item.querySelector('.reveal-btn')!.addEventListener('click', async () => {
+        const result = await window.electronAPI.revealFile(rec.path);
+        if (!result.exists) {
+          RecordingHistory.remove(rec.path);
+          this.refreshRecentList();
+        }
       });
 
       item.querySelector('.delete-btn')!.addEventListener('click', async () => {
-        const result = await window.electronAPI.deleteFile(rec.path);
-        if (result.success) {
-          RecordingHistory.remove(rec.path);
-          this.refreshRecentList();
-        } else {
-          this.setStatus('Failed to delete file', '');
-        }
+        await window.electronAPI.deleteFile(rec.path);
+        RecordingHistory.remove(rec.path);
+        this.refreshRecentList();
       });
 
       list.appendChild(item);

@@ -140,7 +140,9 @@ ipcMain.handle('get-default-output', () => {
 });
 
 ipcMain.handle('reveal-file', (_event, filePath: string) => {
-  shell.showItemInFolder(filePath);
+  const exists = fs.existsSync(filePath);
+  if (exists) shell.showItemInFolder(filePath);
+  return { exists };
 });
 
 ipcMain.handle('delete-file', async (_event, filePath: string) => {
