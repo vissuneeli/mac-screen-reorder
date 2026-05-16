@@ -257,18 +257,42 @@ input[type="checkbox"] {
 
 .quality-options {
   display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.quality-option {
+  flex: 1;
+  display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
+  padding: 10px 8px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.quality-options label {
+.quality-option:has(input:checked) {
+  border-color: #4a9eff;
+  background: rgba(74, 158, 255, 0.08);
+}
+
+.quality-option input[type="radio"] {
+  display: none;
+}
+
+.quality-name {
   font-size: 14px;
+  font-weight: 500;
+  color: #e0e0e0;
 }
 
-.quality-options small {
-  color: #666;
+.quality-meta {
   font-size: 11px;
-  margin-left: 4px;
+  color: #666;
+  text-align: center;
 }
 
 #controls {
@@ -283,7 +307,7 @@ button {
   padding: 12px 20px;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
@@ -453,4 +477,42 @@ button:disabled {
 .rec-action-btn.delete-btn:hover {
   background: #7a2020;
   color: #fff;
+}
+
+/* ── Playback ──────────────────────────────────────────────────────────────── */
+
+.playback-header {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.playback-header h2 {
+  margin-bottom: 0;
+}
+
+#playback-video {
+  width: 100%;
+  border-radius: 6px;
+  background: #000;
+  display: block;
+}
+
+.playback-close-btn {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  line-height: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.playback-close-btn:hover {
+  background: #333;
+  color: #e0e0e0;
 }

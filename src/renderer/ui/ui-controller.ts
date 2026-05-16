@@ -6,8 +6,8 @@ import { StatusView } from './status-view';
 import { DisplayInfo, RecordingEntry } from '../types';
 
 const ICON = {
-  pause:  `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="currentColor"><rect x="1.5" y="0.5" width="2.5" height="9" rx="0.8"/><rect x="6" y="0.5" width="2.5" height="9" rx="0.8"/></svg>`,
-  resume: `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="currentColor"><polygon points="1.5,0.5 9.5,5 1.5,9.5"/></svg>`,
+  pause:  `<svg width="18" height="18" viewBox="0 0 10 10" aria-hidden="true" fill="currentColor"><rect x="1.5" y="0.5" width="2.5" height="9" rx="0.8"/><rect x="6" y="0.5" width="2.5" height="9" rx="0.8"/></svg>`,
+  resume: `<svg width="18" height="18" viewBox="0 0 10 10" aria-hidden="true" fill="currentColor"><polygon points="1.5,0.5 9.5,5 1.5,9.5"/></svg>`,
   reveal: `<svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V8"/><path d="M8 1h4v4M12 1L6 7"/></svg>`,
   trash:  `<svg width="12" height="13" viewBox="0 0 12 13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3.5h10M4.5 3.5v-1a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M2.5 3.5l.75 7.5h5.5l.75-7.5"/></svg>`,
 };
@@ -74,6 +74,7 @@ export class UIController {
       this.refreshRecentList();
       this.status.setStatus(`Saved → ${entry.path}`, 'saved');
       this.setIdle();
+      this.showPlayback(entry.path);
     };
 
     this.recording.onError = (message: string) => {
@@ -110,6 +111,14 @@ export class UIController {
     document.getElementById('pause-btn')!.addEventListener('click', () => this.handlePause());
     document.getElementById('stop-btn')!.addEventListener('click', () => this.handleStop());
     document.getElementById('output-btn')!.addEventListener('click', () => this.pickOutputFolder());
+
+    document.getElementById('playback-close')!.addEventListener('click', () => {
+      const video = document.getElementById('playback-video') as HTMLVideoElement;
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      document.getElementById('playback-section')!.style.display = 'none';
+    });
 
     const micGainSlider = document.getElementById('mic-gain') as HTMLInputElement;
     micGainSlider.addEventListener('input', () => {
@@ -273,6 +282,13 @@ export class UIController {
         radio.dispatchEvent(new Event('change'));
       }
     }
+  }
+
+  private showPlayback(filePath: string): void {
+    const video = document.getElementById('playback-video') as HTMLVideoElement;
+    video.src = `file://${filePath}`;
+    document.getElementById('playback-section')!.style.display = '';
+    video.play().catch(() => {});
   }
 
   async populateMicDevices(): Promise<void> {
