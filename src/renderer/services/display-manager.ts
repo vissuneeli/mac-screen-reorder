@@ -2,7 +2,7 @@ import { DisplayInfo } from '../types';
 
 interface DisplayAPI {
   getDisplays(): Promise<DisplayInfo[]>;
-  getDesktopSources(): Promise<Array<{ id: string; name: string; display_id: string }>>;
+  getDesktopSources(): Promise<Array<{ id: string; name: string; display_id: string; thumbnail: string | null }>>;
 }
 
 export class DisplayManager {
@@ -16,6 +16,16 @@ export class DisplayManager {
     if (this.displays.length > 0 && !this.selectedId) {
       this.selectedId = this.displays[0].id;
     }
+
+    // Attach thumbnails where available — fails gracefully if permission is missing
+    try {
+      const sources = await this.api.getDesktopSources();
+      this.displays = this.displays.map(d => {
+        const match = sources.find(s => s.display_id === d.displayId);
+        return match?.thumbnail ? { ...d, thumbnail: match.thumbnail } : d;
+      });
+    } catch { /* no thumbnail is fine */ }
+
     return this.displays;
   }
 

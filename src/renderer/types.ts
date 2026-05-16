@@ -12,6 +12,7 @@ export interface DisplayInfo {
   displayId: string;
   isPrimary: boolean;
   bounds: { width: number; height: number; x: number; y: number };
+  thumbnail?: string; // data URI from desktopCapturer, if available
 }
 
 export interface RecordingEntry {

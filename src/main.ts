@@ -59,10 +59,15 @@ function registerDisplayHandlers() {
   ipcMain.handle('get-desktop-sources', async () => {
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
-      thumbnailSize: { width: 0, height: 0 },
+      thumbnailSize: { width: 280, height: 180 },
       fetchWindowIcons: false,
     });
-    return sources.map(s => ({ id: s.id, name: s.name, display_id: s.display_id }));
+    return sources.map(s => ({
+      id: s.id,
+      name: s.name,
+      display_id: s.display_id,
+      thumbnail: s.thumbnail.isEmpty() ? null : s.thumbnail.toDataURL(),
+    }));
   });
 }
 

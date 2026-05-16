@@ -10,7 +10,7 @@ interface DisplayInfo {
 
 interface DisplayAPI {
   getDisplays(): Promise<DisplayInfo[]>;
-  getDesktopSources(): Promise<Array<{ id: string; name: string; display_id: string }>>;
+  getDesktopSources(): Promise<Array<{ id: string; name: string; display_id: string; thumbnail: string | null }>>;
 }
 
 interface RecordingAPI {

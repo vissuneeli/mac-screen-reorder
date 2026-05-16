@@ -192,11 +192,17 @@ export class UIController {
   private renderDisplayList(displays: DisplayInfo[]): void {
     const list = document.getElementById('display-list')!;
     list.innerHTML = '';
+    const savedId = SettingsStore.load().lastSelectedDisplay;
     displays.forEach((display, i) => {
+      const isSelected = savedId ? display.id === savedId : i === 0;
       const item = document.createElement('label');
-      item.className = 'display-item' + (i === 0 ? ' selected' : '');
+      item.className = 'display-item' + (isSelected ? ' selected' : '');
+      const preview = display.thumbnail
+        ? `<img src="${display.thumbnail}" alt="">`
+        : `<div class="display-thumb-placeholder">No preview</div>`;
       item.innerHTML = `
-        <input type="radio" name="display" value="${display.id}" ${i === 0 ? 'checked' : ''}>
+        <input type="radio" name="display" value="${display.id}" ${isSelected ? 'checked' : ''}>
+        ${preview}
         <div class="display-info">
           <span class="display-name">${display.name}${display.isPrimary ? ' ★' : ''}</span>
           <span class="display-res">${display.bounds.width}×${display.bounds.height}</span>
