@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+<title>Markmap</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+}
+html {
+  font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+#mindmap {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+.markmap-dark {
+  background: #27272a;
+  color: white;
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.12/dist/style.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/default.min.css">
+</head>
+<body>
+<svg id="mindmap"></svg>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script><script src="https://cdn.jsdelivr.net/npm/markmap-view@0.18.12/dist/browser/index.js"></script><script src="https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.12/dist/index.js"></script><script>((r) => {
+          setTimeout(r);
+        })(() => {
+  const { markmap, mm } = window;
+  const toolbar = new markmap.Toolbar();
+  toolbar.attach(mm);
+  const el = toolbar.render();
+  el.setAttribute("style", "position:absolute;bottom:20px;right:20px");
+  document.body.append(el);
+})</script><script>((getMarkmap, getOptions, root2, jsonOptions) => {
+              const markmap = getMarkmap();
+              window.mm = markmap.Markmap.create(
+                "svg#mindmap",
+                (getOptions || markmap.deriveOptions)(jsonOptions),
+                root2
+              );
+              if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                document.documentElement.classList.add("markmap-dark");
+              }
+            })(() => window.markmap,null,{"content":"macOS Screen Recorder: Mind Maps","children":[{"content":"Product Mind Map","children":[{"content":"<pre data-lines=\"4,54\"><code class=\"language-mermaid\">mindmap\n  root((macOS Screen Recorder))\n    Core Recording\n      Full screen\n      Display selection\n      Window recording\n      Region recording\n      Countdown\n      Timer\n      Pause and resume\n    Audio\n      System audio\n      Microphone\n      Device picker\n      Gain controls\n      Audio meters\n      Mute controls\n      Noise suppression\n    Visual Enhancements\n      Camera overlay\n      Cursor effects\n      Click rings\n      Keystroke overlay\n      Recording border\n      Floating timer\n    Output\n      WebM\n      MP4 export\n      Quality presets\n      File naming templates\n      Output folder profiles\n      Compression presets\n    Recording Library\n      Recent recordings\n      Search\n      Rename\n      Tags\n      Thumbnails\n      Favorites\n      Reveal in Finder\n      Move to Trash\n    macOS Experience\n      Menu bar control\n      Global hotkeys\n      Permission status\n      Native dialogs\n      Code signing\n      Notarization\n</code></pre>","children":[],"payload":{"tag":"pre","lines":"4,54"}}],"payload":{"tag":"h2","lines":"2,3"}},{"content":"Current Architecture Mind Map","children":[{"content":"<pre data-lines=\"57,97\"><code class=\"language-mermaid\">mindmap\n  root((Current Architecture))\n    Main Process\n      BrowserWindow\n      App lifecycle\n      Microphone access request\n      Display discovery\n      Desktop sources\n      Output folder dialog\n      Save recording\n      Reveal file\n      Delete file\n    Preload Bridge\n      contextBridge\n      ipcRenderer.invoke\n      electronAPI\n      Narrow renderer access\n    Renderer Process\n      UI event handling\n      Settings\n      Recent history\n      Display list rendering\n      Capture orchestration\n      Audio mixing\n      MediaRecorder\n      Status and timer\n    Browser APIs\n      getDisplayMedia\n      getUserMedia\n      Web Audio API\n      MediaRecorder\n      localStorage\n    Storage\n      Documents folder\n      Selected output folder\n      WebM files\n      localStorage settings\n      localStorage history\n</code></pre>","children":[],"payload":{"tag":"pre","lines":"57,97"}}],"payload":{"tag":"h2","lines":"55,56"}},{"content":"Recording Flow Mind Map","children":[{"content":"<pre data-lines=\"100,142\"><code class=\"language-mermaid\">mindmap\n  root((Recording Flow))\n    Initialize\n      Load default output folder\n      Load displays\n      Restore settings\n      Render recent recordings\n    User Starts\n      Validate selected display\n      Read audio settings\n      Create AudioMixer\n      Show source picker status\n    Capture Screen\n      getDisplayMedia\n        Video stream\n        Optional system audio\n      Fallback path\n        getDesktopSources\n        Match selected display\n        getUserMedia desktop source\n    Capture Audio\n      System audio track\n      Microphone stream\n      Mic gain\n      Audio meters\n      Mixed output stream\n    Record\n      Combine video and mixed audio\n      Show countdown\n      Create MediaRecorder\n      Start timer\n      Store chunks\n    Stop\n      Stop MediaRecorder\n      Stop timer\n      Create Blob\n      Convert to ArrayBuffer\n      Save through IPC\n      Add to history\n      Cleanup streams\n</code></pre>","children":[],"payload":{"tag":"pre","lines":"100,142"}}],"payload":{"tag":"h2","lines":"98,99"}},{"content":"Target Architecture Mind Map","children":[{"content":"<pre data-lines=\"145,188\"><code class=\"language-mermaid\">mindmap\n  root((Target Architecture))\n    Renderer\n      UI components\n      Renderer store\n      Capture controller\n      Audio controller\n      Preview\n      Meters\n      State machine\n    Preload\n      Typed API\n      Valid request shapes\n      No Node exposure\n      IPC boundary\n    Main Process\n      WindowService\n      PermissionService\n      SourceService\n      RecordingFileService\n      LibraryService\n      ExportService\n      HotkeyService\n      MenuBarService\n    Storage\n      App data settings\n      Library metadata\n      Temporary chunks\n      Recording files\n      Exported files\n    Background Work\n      MP4 conversion\n      Thumbnail generation\n      Compression\n      Cleanup failed sessions\n    Security\n      Payload validation\n      Safe output folders\n      Recording IDs\n      Move to Trash\n      Permission checks\n</code></pre>","children":[],"payload":{"tag":"pre","lines":"145,188"}}],"payload":{"tag":"h2","lines":"143,144"}},{"content":"State Machine Mind Map","children":[{"content":"<pre data-lines=\"191,241\"><code class=\"language-mermaid\">mindmap\n  root((Recorder States))\n    Booting\n      Create window\n      Load renderer\n      Initialize APIs\n    Permission Check\n      Screen Recording\n      Microphone\n      Camera later\n      Open System Settings\n    Idle\n      Choose source\n      Configure audio\n      Configure quality\n      Pick output folder\n    Preparing Capture\n      Acquire screen stream\n      Acquire microphone\n      Build mixed audio\n      Validate codec support\n    Countdown\n      Show countdown\n      Prepare recorder\n    Recording\n      Write chunks\n      Update timer\n      Update meters\n      Listen for track ended\n    Paused\n      Pause MediaRecorder\n      Preserve timer state\n      Resume or stop\n    Finalizing\n      Stop recorder\n      Flush chunks\n      Save file\n      Create metadata\n    Post Recording\n      Playback\n      Trim\n      Rename\n      Reveal\n      Export\n    Error\n      Show recoverable message\n      Cleanup streams\n      Recover temp files\n</code></pre>","children":[],"payload":{"tag":"pre","lines":"191,241"}}],"payload":{"tag":"h2","lines":"189,190"}},{"content":"Security Mind Map","children":[{"content":"<pre data-lines=\"244,280\"><code class=\"language-mermaid\">mindmap\n  root((Security Boundary))\n    Renderer Boundary\n      Treat as untrusted\n      No Node integration\n      No direct filesystem\n      Strict CSP\n    Preload Boundary\n      Small API surface\n      Typed methods\n      Known IPC channels\n      No arbitrary invoke\n    Main Boundary\n      Validate payloads\n      Own file policy\n      Own app settings\n      Own metadata\n    File Safety\n      Approved output folders\n      Recording session IDs\n      Path normalization\n      No arbitrary delete\n      Move to Trash\n    Permissions\n      Screen recording\n      Microphone\n      Camera only when used\n      User-visible status\n    Release Safety\n      Real bundle ID\n      App icon\n      Code signing\n      Notarization\n      Remove unused entitlements\n</code></pre>","children":[],"payload":{"tag":"pre","lines":"244,280"}}],"payload":{"tag":"h2","lines":"242,243"}},{"content":"Implementation Roadmap Mind Map","children":[{"content":"<pre data-lines=\"283,324\"><code class=\"language-mermaid\">mindmap\n  root((Roadmap))\n    Phase 1 Reliability\n      Deterministic source selection\n      Codec support detection\n      Better error states\n      Track-ended handling\n      Cleanup partial recordings\n    Phase 2 Persistence\n      Chunked save sessions\n      Main-process metadata\n      Safe delete\n      Recording IDs\n      Recover failed sessions\n    Phase 3 Native Controls\n      Pause resume\n      Global hotkeys\n      Menu bar controller\n      Floating recording overlay\n      Permission dashboard\n    Phase 4 Export\n      MP4 output\n      Thumbnail generation\n      Compression presets\n      Export progress\n      Background jobs\n    Phase 5 Creation Tools\n      Camera overlay\n      Cursor effects\n      Keystroke overlay\n      Region recording\n      Window recording\n    Phase 6 Library\n      Search\n      Tags\n      Rename\n      Favorites\n      Missing file repair\n      Sort and filters\n</code></pre>","children":[],"payload":{"tag":"pre","lines":"283,324"}}],"payload":{"tag":"h2","lines":"281,282"}}],"payload":{"tag":"h1","lines":"0,1"}},null)</script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Codex" />
+  <meta name="dcterms.date" content="2026-05-02" />
+  <title>macOS Screen Recorder Review</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="screen-recorder-review.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">macOS Screen Recorder Review</h1>
+<p class="subtitle">Feature and Improvement Recommendations</p>
+<p class="author">Codex</p>
+<p class="date">May 2, 2026</p>
+</header>
+<h1 id="executive-summary">Executive Summary</h1>
+<p>The current app is a clean minimal Electron screen recorder. It
+already has a useful foundation: display discovery, microphone and
+system audio toggles, microphone gain, quality presets, a countdown,
+recording timer, output folder selection, and a recent recordings
+list.</p>
+<p>To feel like a polished macOS recording product, the next phase
+should focus on capture reliability, native recording controls, safer
+file handling, and a stronger post-recording workflow. The biggest
+opportunity is to evolve from a basic “start and stop” recorder into a
+lightweight capture studio for tutorials, demos, bug reports, and quick
+shareable videos.</p>
+<h1 id="current-strengths">Current Strengths</h1>
+<ul>
+<li>Small, understandable Electron and TypeScript codebase.</li>
+<li>Secure renderer setup with <code>contextIsolation: true</code> and
+<code>nodeIntegration: false</code>.</li>
+<li>Simple IPC bridge through <code>preload.ts</code>.</li>
+<li>Audio mixing architecture already supports microphone and system
+audio streams.</li>
+<li>Quality presets are easy for users to understand.</li>
+<li>Recent recordings list gives the app a useful continuity loop.</li>
+<li>Build passes with the current TypeScript setup.</li>
+</ul>
+<h1 id="highest-priority-fixes">Highest Priority Fixes</h1>
+<h2 id="make-display-selection-match-actual-capture">1. Make Display
+Selection Match Actual Capture</h2>
+<p>The UI lets the user select a display, but the primary recording path
+uses <code>navigator.mediaDevices.getDisplayMedia()</code>, which still
+shows the system picker. That means the selected display is more of a
+preference than a guaranteed source.</p>
+<p>Recommended improvement:</p>
+<ul>
+<li>Either route capture through Electron desktop sources so the
+selected display is enforced.</li>
+<li>Or update the UI copy to make it clear that macOS will ask the user
+to confirm the capture source.</li>
+<li>Add display thumbnails so users can visually confirm the intended
+source before recording.</li>
+</ul>
+<h2 id="avoid-holding-long-recordings-fully-in-memory">2. Avoid Holding
+Long Recordings Fully in Memory</h2>
+<p>The renderer stores all <code>MediaRecorder</code> chunks in memory
+and sends the final buffer to the main process when recording stops.
+This can become unstable for long recordings.</p>
+<p>Recommended improvement:</p>
+<ul>
+<li>Stream chunks incrementally to disk.</li>
+<li>Or send chunks to the main process every few seconds and append them
+to a temporary recording file.</li>
+<li>Show available disk space and warn before long high-quality
+recordings.</li>
+</ul>
+<h2 id="harden-file-ipc">3. Harden File IPC</h2>
+<p>The renderer can pass file paths for saving, revealing, and deleting.
+For a local app this may work during development, but production builds
+should treat renderer input as untrusted.</p>
+<p>Recommended improvement:</p>
+<ul>
+<li>Only allow save/delete operations inside a user-approved output
+folder.</li>
+<li>Track recording IDs in the main process instead of accepting
+arbitrary paths.</li>
+<li>Confirm delete actions in the UI.</li>
+<li>Prefer moving recordings to Trash instead of permanent
+deletion.</li>
+</ul>
+<h2 id="clean-up-packaging-metadata">4. Clean Up Packaging Metadata</h2>
+<p>The app references an icon at <code>public/icon.icns</code>, but that
+file is not currently present in the project listing. The app also
+declares camera permissions and entitlements before webcam capture
+exists.</p>
+<p>Recommended improvement:</p>
+<ul>
+<li>Add a real app icon and verify packaging output.</li>
+<li>Remove camera permission until webcam overlay is implemented.</li>
+<li>Replace <code>com.example.screenrecorder</code> with a real bundle
+identifier before distribution.</li>
+<li>Add signing and notarization steps for macOS releases.</li>
+</ul>
+<h1 id="product-feature-roadmap">Product Feature Roadmap</h1>
+<h2 id="capture-modes">Capture Modes</h2>
+<ul>
+<li>Full screen recording.</li>
+<li>Selected display recording.</li>
+<li>Selected window recording.</li>
+<li>Custom region recording with draggable crop handles.</li>
+<li>Fixed aspect presets such as 16:9, 4:3, 1:1, and vertical 9:16.</li>
+<li>Remember last capture mode and source.</li>
+</ul>
+<h2 id="camera-overlay">Camera Overlay</h2>
+<ul>
+<li>Add webcam bubble overlay for tutorials and walkthroughs.</li>
+<li>Support circular and rounded rectangle shapes.</li>
+<li>Allow drag positioning and size presets.</li>
+<li>Add mirror mode.</li>
+<li>Add camera background blur if available.</li>
+<li>Store overlay preferences per recording profile.</li>
+</ul>
+<h2 id="cursor-and-interaction-effects">Cursor and Interaction
+Effects</h2>
+<ul>
+<li>Show or hide cursor.</li>
+<li>Add click rings.</li>
+<li>Add cursor spotlight mode.</li>
+<li>Add optional mouse trail.</li>
+<li>Add keystroke overlay for tutorial videos.</li>
+<li>Let users style cursor effects per profile.</li>
+</ul>
+<h2 id="recording-controls">Recording Controls</h2>
+<ul>
+<li>Pause and resume recording.</li>
+<li>Global hotkeys for start, stop, pause, and resume.</li>
+<li>Menu bar controller with timer and quick stop button.</li>
+<li>Floating recording overlay with elapsed time.</li>
+<li>Optional recording border around the captured area.</li>
+<li>Configurable countdown length.</li>
+</ul>
+<h2 id="audio-controls">Audio Controls</h2>
+<ul>
+<li>Microphone device picker.</li>
+<li>System audio availability detection.</li>
+<li>Live mic test before recording.</li>
+<li>Separate system and microphone gain controls.</li>
+<li>Mute microphone while recording.</li>
+<li>Noise suppression and echo cancellation toggles.</li>
+<li>Optional separate audio track export for editing.</li>
+</ul>
+<h2 id="output-and-export">Output and Export</h2>
+<ul>
+<li>MP4 export using H.264/AAC for broad compatibility.</li>
+<li>Keep WebM as an advanced option.</li>
+<li>Configurable bitrate and frame rate.</li>
+<li>Automatic file naming templates.</li>
+<li>Save location profiles.</li>
+<li>Optional compression after recording.</li>
+<li>Export presets for high quality, small file, Slack/email, YouTube,
+and mobile vertical clips.</li>
+</ul>
+<h2 id="post-recording-workflow">Post-Recording Workflow</h2>
+<ul>
+<li>Instant playback after recording.</li>
+<li>Trim start and end points.</li>
+<li>Rename recording before final save.</li>
+<li>Generate thumbnail preview.</li>
+<li>Copy file path or drag file out of the app.</li>
+<li>Reveal in Finder.</li>
+<li>Duplicate recording.</li>
+<li>Delete with confirmation or move to Trash.</li>
+</ul>
+<h2 id="recording-library">Recording Library</h2>
+<ul>
+<li>Search recordings.</li>
+<li>Sort by date, duration, size, or name.</li>
+<li>Pin favorite recordings.</li>
+<li>Add tags such as Demo, Bug, Tutorial, Meeting, or Draft.</li>
+<li>Show duration, size, resolution, frame rate, and audio sources.</li>
+<li>Detect missing files and offer to remove stale history entries.</li>
+</ul>
+<h1 id="ux-improvements">UX Improvements</h1>
+<ul>
+<li>Replace the tall form layout with a denser macOS-style control
+panel.</li>
+<li>Use icons for reveal, delete, rename, play, and folder actions.</li>
+<li>Show permission status cards for Screen Recording, Microphone, and
+Camera.</li>
+<li>Add a clear “Open System Settings” action when permission is
+missing.</li>
+<li>Make the display selector visual with thumbnails and resolution
+labels.</li>
+<li>Add a clear recording state: idle, waiting for permission,
+countdown, recording, paused, saving, saved, failed.</li>
+<li>Avoid permanent inline status messages that contain long file paths;
+use a compact saved state with actions.</li>
+<li>Add delete confirmation.</li>
+<li>Add empty states for recent recordings and unavailable audio.</li>
+<li>Make the app usable as a menu bar utility for quick screen
+captures.</li>
+</ul>
+<h1 id="engineering-improvements">Engineering Improvements</h1>
+<h2 id="reliability">Reliability</h2>
+<ul>
+<li>Centralize recorder state in a small state machine.</li>
+<li>Handle <code>MediaRecorder.isTypeSupported()</code> before choosing
+a codec.</li>
+<li>Fall back from VP9 to VP8 or another supported format.</li>
+<li>Handle track-ended events for every active track, not only the first
+video track.</li>
+<li>Add cleanup for partial recordings and failed saves.</li>
+<li>Add recovery for stale localStorage settings.</li>
+</ul>
+<h2 id="security">Security</h2>
+<ul>
+<li>Validate IPC payloads in the main process.</li>
+<li>Restrict file operations to known safe directories.</li>
+<li>Move deletions to Trash where possible.</li>
+<li>Remove unused permissions.</li>
+<li>Keep Content Security Policy strict and remove inline styles over
+time.</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<ul>
+<li>Split the renderer logic into modules: settings, recording, audio,
+display sources, history, and UI.</li>
+<li>Move durable app settings to the main process or an app data file
+instead of relying only on localStorage.</li>
+<li>Store recording metadata in a JSON database under the app data
+directory.</li>
+<li>Keep UI rendering separate from recording behavior.</li>
+</ul>
+<h2 id="testing">Testing</h2>
+<ul>
+<li>Add unit tests for settings, history, filename generation, and path
+validation.</li>
+<li>Add integration tests for IPC handlers.</li>
+<li>Add manual QA checklist for macOS permissions.</li>
+<li>Add smoke tests for build and package output.</li>
+</ul>
+<h1 id="suggested-implementation-order">Suggested Implementation
+Order</h1>
+<ol type="1">
+<li>Fix display/source selection behavior.</li>
+<li>Harden IPC path validation and delete handling.</li>
+<li>Add pause and resume.</li>
+<li>Add global hotkeys and menu bar control.</li>
+<li>Add MP4 export.</li>
+<li>Add microphone device selection and audio test.</li>
+<li>Add recording playback and trim.</li>
+<li>Add camera overlay.</li>
+<li>Add cursor effects and keystroke overlay.</li>
+<li>Build the richer recording library.</li>
+</ol>
+<h1 id="recommended-app-positioning">Recommended App Positioning</h1>
+<p>The strongest product direction is a fast macOS capture studio for
+demos, tutorials, and bug reports. The app should optimize for:</p>
+<ul>
+<li>Starting a recording quickly.</li>
+<li>Knowing exactly what will be captured.</li>
+<li>Capturing clean audio.</li>
+<li>Stopping without losing work.</li>
+<li>Exporting a shareable file immediately.</li>
+<li>Keeping recent recordings easy to find.</li>
+</ul>
+<p>That direction keeps the product focused while still leaving room for
+premium features such as camera overlay, cursor effects, advanced export
+presets, and cloud sharing later.</p>
+</body>
+</html>

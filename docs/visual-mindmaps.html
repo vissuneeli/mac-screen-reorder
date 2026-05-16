@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>macOS Screen Recorder Visual Mind Maps</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d7deea;
+      --blue: #2563eb;
+      --teal: #0f766e;
+      --green: #15803d;
+      --amber: #b45309;
+      --rose: #be123c;
+      --violet: #7c3aed;
+      --slate: #475569;
+      --shadow: 0 18px 45px rgba(23, 32, 51, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(37, 99, 235, 0.10), transparent 30%),
+        radial-gradient(circle at 90% 15%, rgba(15, 118, 110, 0.12), transparent 28%),
+        var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 32px clamp(20px, 5vw, 64px) 18px;
+    }
+
+    .hero {
+      align-items: end;
+      display: grid;
+      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      margin: 0 auto;
+      max-width: 1320px;
+    }
+
+    h1 {
+      font-size: clamp(30px, 5vw, 58px);
+      letter-spacing: 0;
+      line-height: 1;
+      margin: 0 0 12px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 0;
+      max-width: 780px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      align-items: center;
+      background: var(--ink);
+      border: 0;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      display: inline-flex;
+      font: inherit;
+      font-weight: 700;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 14px;
+    }
+
+    button.secondary {
+      background: white;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    main {
+      margin: 0 auto;
+      max-width: 1320px;
+      padding: 0 clamp(20px, 5vw, 64px) 48px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 18px;
+    }
+
+    .tab {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--slate);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 10px 14px;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .tab:hover {
+      transform: translateY(-1px);
+    }
+
+    .tab.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: white;
+    }
+
+    .stage {
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(215, 222, 234, 0.95);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .map-header {
+      align-items: center;
+      background: linear-gradient(135deg, rgba(23, 32, 51, 0.98), rgba(37, 99, 235, 0.88));
+      color: white;
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding: 22px 26px;
+    }
+
+    .map-header h2 {
+      font-size: 24px;
+      line-height: 1.15;
+      margin: 0 0 6px;
+    }
+
+    .map-header p {
+      color: rgba(255, 255, 255, 0.80);
+      line-height: 1.5;
+      margin: 0;
+      max-width: 780px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: end;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      color: white;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 10px;
+      white-space: nowrap;
+    }
+
+    .canvas {
+      min-height: 680px;
+      overflow: auto;
+      padding: 28px;
+      position: relative;
+    }
+
+    .mindmap {
+      align-items: center;
+      display: grid;
+      gap: 28px;
+      grid-template-columns: minmax(270px, 1fr) 260px minmax(270px, 1fr);
+      min-width: 940px;
+      position: relative;
+    }
+
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      justify-content: center;
+      min-height: 610px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .center-wrap {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      min-height: 610px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .center-node {
+      align-items: center;
+      aspect-ratio: 1;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.55), transparent 32%),
+        linear-gradient(135deg, #1d4ed8, #0f766e);
+      border: 10px solid rgba(255, 255, 255, 0.85);
+      border-radius: 999px;
+      box-shadow: 0 24px 50px rgba(37, 99, 235, 0.28);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 238px;
+      padding: 24px;
+      text-align: center;
+      width: 100%;
+    }
+
+    .center-node strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1.05;
+      margin-bottom: 8px;
+    }
+
+    .center-node span {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .branch {
+      background: white;
+      border: 1px solid var(--line);
+      border-left: 7px solid var(--accent);
+      border-radius: 14px;
+      box-shadow: 0 10px 26px rgba(23, 32, 51, 0.08);
+      overflow: hidden;
+    }
+
+    .left .branch {
+      border-left: 1px solid var(--line);
+      border-right: 7px solid var(--accent);
+    }
+
+    .branch-head {
+      align-items: center;
+      background: color-mix(in srgb, var(--accent) 10%, white);
+      display: flex;
+      gap: 10px;
+      padding: 13px 15px 10px;
+    }
+
+    .index {
+      align-items: center;
+      background: var(--accent);
+      border-radius: 999px;
+      color: white;
+      display: inline-flex;
+      flex: 0 0 28px;
+      font-size: 12px;
+      font-weight: 900;
+      height: 28px;
+      justify-content: center;
+      width: 28px;
+    }
+
+    .branch h3 {
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .branch ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      list-style: none;
+      margin: 0;
+      padding: 12px 14px 15px;
+    }
+
+    .branch li {
+      background: #f6f8fc;
+      border: 1px solid #e6ebf3;
+      border-radius: 999px;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      padding: 7px 9px;
+    }
+
+    .connectors {
+      inset: 0;
+      pointer-events: none;
+      position: absolute;
+      z-index: 1;
+    }
+
+    .connector {
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
+      height: 2px;
+      opacity: 0.9;
+      position: absolute;
+      transform-origin: center;
+    }
+
+    .connector.left-1 { left: 28%; top: 16%; width: 25%; transform: rotate(10deg); }
+    .connector.left-2 { left: 27%; top: 31%; width: 25%; transform: rotate(4deg); }
+    .connector.left-3 { left: 27%; top: 47%; width: 25%; transform: rotate(-2deg); }
+    .connector.left-4 { left: 27%; top: 63%; width: 25%; transform: rotate(-7deg); }
+    .connector.right-1 { left: 48%; top: 16%; width: 25%; transform: rotate(-10deg); }
+    .connector.right-2 { left: 48%; top: 31%; width: 25%; transform: rotate(-4deg); }
+    .connector.right-3 { left: 48%; top: 47%; width: 25%; transform: rotate(2deg); }
+    .connector.right-4 { left: 48%; top: 63%; width: 25%; transform: rotate(7deg); }
+
+    .summary-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-top: 18px;
+    }
+
+    .metric {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 760px) {
+      .hero,
+      .map-header {
+        grid-template-columns: 1fr;
+      }
+
+      .actions,
+      .legend {
+        justify-content: start;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      header,
+      .tabs,
+      .actions {
+        display: none;
+      }
+
+      main {
+        max-width: none;
+        padding: 0;
+      }
+
+      .stage {
+        border: 0;
+        box-shadow: none;
+      }
+
+      .canvas {
+        min-height: 0;
+        overflow: visible;
+      }
+
+      .mindmap {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hero">
+      <div>
+        <h1>Screen Recorder Mind Maps</h1>
+        <p class="subtitle">A visual, offline architecture dashboard for the Electron macOS Screen Recorder. Built with plain HTML, CSS, and JavaScript so it can be opened locally without any paid tools or external services.</p>
+      </div>
+      <div class="actions">
+        <button type="button" onclick="window.print()">Print or Save PDF</button>
+        <button class="secondary" type="button" onclick="showAll()">Show All</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <nav class="tabs" id="tabs"></nav>
+    <section class="stage">
+      <div class="map-header">
+        <div>
+          <h2 id="map-title"></h2>
+          <p id="map-description"></p>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="canvas" id="canvas"></div>
+    </section>
+    <section class="summary-grid" id="summary"></section>
+  </main>
+
+  <script>
+    const colors = ["#2563eb", "#0f766e", "#15803d", "#b45309", "#be123c", "#7c3aed", "#475569", "#0891b2"];
+
+    const maps = [
+      {
+        id: "product",
+        title: "Product Mind Map",
+        root: "macOS Screen Recorder",
+        subtitle: "Product Capability Map",
+        description: "The feature surface needed to move from a basic recorder to a focused capture studio for demos, tutorials, and bug reports.",
+        branches: [
+          ["Core Recording", ["Full screen", "Display selection", "Window recording", "Region recording", "Countdown", "Timer", "Pause and resume"]],
+          ["Audio", ["System audio", "Microphone", "Device picker", "Gain controls", "Audio meters", "Mute controls", "Noise suppression"]],
+          ["Visual Enhancements", ["Camera overlay", "Cursor effects", "Click rings", "Keystroke overlay", "Recording border", "Floating timer"]],
+          ["Output", ["WebM", "MP4 export", "Quality presets", "File naming templates", "Output folder profiles", "Compression presets"]],
+          ["Recording Library", ["Recent recordings", "Search", "Rename", "Tags", "Thumbnails", "Favorites", "Reveal in Finder", "Move to Trash"]],
+          ["macOS Experience", ["Menu bar control", "Global hotkeys", "Permission status", "Native dialogs", "Code signing", "Notarization"]]
+        ]
+      },
+      {
+        id: "current",
+        title: "Current Architecture",
+        root: "Current Architecture",
+        subtitle: "Electron Runtime",
+        description: "How the app is currently divided across Electron main process, preload bridge, renderer process, browser APIs, and storage.",
+        branches: [
+          ["Main Process", ["BrowserWindow", "App lifecycle", "Microphone access request", "Display discovery", "Desktop sources", "Output folder dialog", "Save recording", "Reveal file", "Delete file"]],
+          ["Preload Bridge", ["contextBridge", "ipcRenderer.invoke", "electronAPI", "Narrow renderer access"]],
+          ["Renderer Process", ["UI event handling", "Settings", "Recent history", "Display list rendering", "Capture orchestration", "Audio mixing", "MediaRecorder", "Status and timer"]],
+          ["Browser APIs", ["getDisplayMedia", "getUserMedia", "Web Audio API", "MediaRecorder", "localStorage"]],
+          ["Storage", ["Documents folder", "Selected output folder", "WebM files", "localStorage settings", "localStorage history"]]
+        ]
+      },
+      {
+        id: "flow",
+        title: "Recording Flow",
+        root: "Recording Flow",
+        subtitle: "Start to Saved File",
+        description: "The current user path from initialization through capture, audio mixing, recording, save, history update, and stream cleanup.",
+        branches: [
+          ["Initialize", ["Load default output folder", "Load displays", "Restore settings", "Render recent recordings"]],
+          ["User Starts", ["Validate selected display", "Read audio settings", "Create AudioMixer", "Show source picker status"]],
+          ["Capture Screen", ["getDisplayMedia", "Video stream", "Optional system audio", "Fallback desktop source", "Match selected display"]],
+          ["Capture Audio", ["System audio track", "Microphone stream", "Mic gain", "Audio meters", "Mixed output stream"]],
+          ["Record", ["Combine video and mixed audio", "Show countdown", "Create MediaRecorder", "Start timer", "Store chunks"]],
+          ["Stop", ["Stop MediaRecorder", "Stop timer", "Create Blob", "Convert to ArrayBuffer", "Save through IPC", "Add to history", "Cleanup streams"]]
+        ]
+      },
+      {
+        id: "target",
+        title: "Target Architecture",
+        root: "Target Architecture",
+        subtitle: "Scalable Service Model",
+        description: "The recommended future architecture that keeps the renderer focused on UI and capture while the main process owns trusted native operations.",
+        branches: [
+          ["Renderer", ["UI components", "Renderer store", "Capture controller", "Audio controller", "Preview", "Meters", "State machine"]],
+          ["Preload", ["Typed API", "Valid request shapes", "No Node exposure", "IPC boundary"]],
+          ["Main Process", ["WindowService", "PermissionService", "SourceService", "RecordingFileService", "LibraryService", "ExportService", "HotkeyService", "MenuBarService"]],
+          ["Storage", ["App data settings", "Library metadata", "Temporary chunks", "Recording files", "Exported files"]],
+          ["Background Work", ["MP4 conversion", "Thumbnail generation", "Compression", "Cleanup failed sessions"]],
+          ["Security", ["Payload validation", "Safe output folders", "Recording IDs", "Move to Trash", "Permission checks"]]
+        ]
+      },
+      {
+        id: "states",
+        title: "Recorder State Machine",
+        root: "Recorder States",
+        subtitle: "Lifecycle Control",
+        description: "A cleaner state model for predictable capture behavior, pause and resume, finalization, recovery, and user-visible errors.",
+        branches: [
+          ["Booting", ["Create window", "Load renderer", "Initialize APIs"]],
+          ["Permission Check", ["Screen Recording", "Microphone", "Camera later", "Open System Settings"]],
+          ["Idle", ["Choose source", "Configure audio", "Configure quality", "Pick output folder"]],
+          ["Preparing Capture", ["Acquire screen stream", "Acquire microphone", "Build mixed audio", "Validate codec support"]],
+          ["Recording", ["Write chunks", "Update timer", "Update meters", "Listen for track ended"]],
+          ["Post Recording", ["Playback", "Trim", "Rename", "Reveal", "Export"]],
+          ["Error", ["Show recoverable message", "Cleanup streams", "Recover temp files"]]
+        ]
+      },
+      {
+        id: "security",
+        title: "Security Boundary",
+        root: "Security Boundary",
+        subtitle: "Trust and File Safety",
+        description: "The security model that separates untrusted renderer UI from trusted main-process filesystem and native operations.",
+        branches: [
+          ["Renderer Boundary", ["Treat as untrusted", "No Node integration", "No direct filesystem", "Strict CSP"]],
+          ["Preload Boundary", ["Small API surface", "Typed methods", "Known IPC channels", "No arbitrary invoke"]],
+          ["Main Boundary", ["Validate payloads", "Own file policy", "Own app settings", "Own metadata"]],
+          ["File Safety", ["Approved output folders", "Recording session IDs", "Path normalization", "No arbitrary delete", "Move to Trash"]],
+          ["Permissions", ["Screen recording", "Microphone", "Camera only when used", "User-visible status"]],
+          ["Release Safety", ["Real bundle ID", "App icon", "Code signing", "Notarization", "Remove unused entitlements"]]
+        ]
+      },
+      {
+        id: "roadmap",
+        title: "Implementation Roadmap",
+        root: "Roadmap",
+        subtitle: "Phased Delivery",
+        description: "A practical feature and engineering sequence from reliability fixes through library, export, and creation tools.",
+        branches: [
+          ["Phase 1 Reliability", ["Deterministic source selection", "Codec support detection", "Better error states", "Track-ended handling", "Cleanup partial recordings"]],
+          ["Phase 2 Persistence", ["Chunked save sessions", "Main-process metadata", "Safe delete", "Recording IDs", "Recover failed sessions"]],
+          ["Phase 3 Native Controls", ["Pause resume", "Global hotkeys", "Menu bar controller", "Floating recording overlay", "Permission dashboard"]],
+          ["Phase 4 Export", ["MP4 output", "Thumbnail generation", "Compression presets", "Export progress", "Background jobs"]],
+          ["Phase 5 Creation Tools", ["Camera overlay", "Cursor effects", "Keystroke overlay", "Region recording", "Window recording"]],
+          ["Phase 6 Library", ["Search", "Tags", "Rename", "Favorites", "Missing file repair", "Sort and filters"]]
+        ]
+      }
+    ];
+
+    let activeMap = maps[0].id;
+
+    function renderTabs() {
+      const tabs = document.getElementById("tabs");
+      tabs.innerHTML = maps.map((map) => (
+        `<button class="tab ${map.id === activeMap ? "active" : ""}" type="button" data-id="${map.id}">${map.title}</button>`
+      )).join("");
+      tabs.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          activeMap = tab.dataset.id;
+          render();
+        });
+      });
+    }
+
+    function branchHtml(branch, index, side) {
+      const color = colors[index % colors.length];
+      const items = branch[1].map((item) => `<li>${item}</li>`).join("");
+      return `
+        <article class="branch" style="--accent: ${color}">
+          <div class="branch-head">
+            <span class="index">${index + 1}</span>
+            <h3>${branch[0]}</h3>
+          </div>
+          <ul>${items}</ul>
+        </article>
+      `;
+    }
+
+    function renderMap(map) {
+      const midpoint = Math.ceil(map.branches.length / 2);
+      const left = map.branches.slice(0, midpoint);
+      const right = map.branches.slice(midpoint);
+      const leftHtml = left.map((branch, i) => branchHtml(branch, i, "left")).join("");
+      const rightHtml = right.map((branch, i) => branchHtml(branch, i + midpoint, "right")).join("");
+
+      return `
+        <div class="mindmap">
+          <div class="connectors">
+            <span class="connector left-1"></span>
+            <span class="connector left-2"></span>
+            <span class="connector left-3"></span>
+            <span class="connector left-4"></span>
+            <span class="connector right-1"></span>
+            <span class="connector right-2"></span>
+            <span class="connector right-3"></span>
+            <span class="connector right-4"></span>
+          </div>
+          <div class="side left">${leftHtml}</div>
+          <div class="center-wrap">
+            <div class="center-node">
+              <strong>${map.root}</strong>
+              <span>${map.subtitle}</span>
+            </div>
+          </div>
+          <div class="side right">${rightHtml}</div>
+        </div>
+      `;
+    }
+
+    function renderSummary(map) {
+      const itemCount = map.branches.reduce((total, branch) => total + branch[1].length, 0);
+      const metrics = [
+        [map.branches.length, "Major branches"],
+        [itemCount, "Mapped items"],
+        ["Offline", "No external tools"],
+        ["Printable", "PDF ready"]
+      ];
+      document.getElementById("summary").innerHTML = metrics.map(([value, label]) => (
+        `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`
+      )).join("");
+    }
+
+    function renderLegend(map) {
+      document.getElementById("legend").innerHTML = map.branches.map((branch, index) => (
+        `<span class="pill" style="background: ${colors[index % colors.length]}">${branch[0]}</span>`
+      )).join("");
+    }
+
+    function render() {
+      const map = maps.find((item) => item.id === activeMap) || maps[0];
+      document.getElementById("map-title").textContent = map.title;
+      document.getElementById("map-description").textContent = map.description;
+      document.getElementById("canvas").innerHTML = renderMap(map);
+      renderLegend(map);
+      renderSummary(map);
+      renderTabs();
+    }
+
+    function showAll() {
+      const html = maps.map((map) => `
+        <div style="margin-bottom: 34px">
+          <h2 style="margin: 0 0 8px">${map.title}</h2>
+          <p style="color: var(--muted); margin: 0 0 16px">${map.description}</p>
+          ${renderMap(map)}
+        </div>
+      `).join("");
+      document.getElementById("map-title").textContent = "All Mind Maps";
+      document.getElementById("map-description").textContent = "A full visual set covering product, architecture, recording flow, target design, states, security, and roadmap.";
+      document.getElementById("legend").innerHTML = '<span class="pill">Complete Set</span><span class="pill">Offline HTML</span><span class="pill">Printable</span>';
+      document.getElementById("canvas").innerHTML = html;
+      document.getElementById("summary").innerHTML = "";
+      document.querySelectorAll(".tab").forEach((tab) => tab.classList.remove("active"));
+    }
+
+    render();
+  </script>
+</body>
+</html>
