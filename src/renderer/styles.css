@@ -236,6 +236,14 @@ button {
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+button svg {
+  flex-shrink: 0;
 }
 
 #start-btn {
@@ -359,15 +367,22 @@ button:disabled {
 
 .rec-action-btn {
   flex: 0 0 auto;
-  padding: 4px 10px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   font-size: 11px;
   background: #444;
   color: #ccc;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
 .rec-action-btn:hover {
   background: #555;
+}
+
+.rec-action-btn.delete-btn:hover {
+  background: #7a2020;
+  color: #fff;
 }

@@ -5,6 +5,13 @@ import { HistoryManager } from '../services/history-manager';
 import { StatusView } from './status-view';
 import { DisplayInfo, RecordingEntry } from '../types';
 
+const ICON = {
+  pause:  `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="currentColor"><rect x="1.5" y="0.5" width="2.5" height="9" rx="0.8"/><rect x="6" y="0.5" width="2.5" height="9" rx="0.8"/></svg>`,
+  resume: `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="currentColor"><polygon points="1.5,0.5 9.5,5 1.5,9.5"/></svg>`,
+  reveal: `<svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V8"/><path d="M8 1h4v4M12 1L6 7"/></svg>`,
+  trash:  `<svg width="12" height="13" viewBox="0 0 12 13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3.5h10M4.5 3.5v-1a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M2.5 3.5l.75 7.5h5.5l.75-7.5"/></svg>`,
+};
+
 interface FileAPI {
   pickOutputFolder(): Promise<string | null>;
   getDefaultOutput(): Promise<string>;
@@ -143,13 +150,13 @@ export class UIController {
     if (this.recording.isPaused) {
       this.recording.resume();
       this.status.resumeTimer(this.elapsedAtPause);
-      (document.getElementById('pause-btn') as HTMLButtonElement).textContent = 'Pause';
+      (document.getElementById('pause-btn') as HTMLButtonElement).innerHTML = `${ICON.pause} Pause`;
       this.status.setStatus('Recording...', 'recording');
     } else {
       this.elapsedAtPause = this.status.getElapsedMs();
       this.recording.pause();
       this.status.pauseTimer();
-      (document.getElementById('pause-btn') as HTMLButtonElement).textContent = 'Resume';
+      (document.getElementById('pause-btn') as HTMLButtonElement).innerHTML = `${ICON.resume} Resume`;
       this.status.setStatus('Paused', 'paused');
     }
   }
@@ -163,7 +170,7 @@ export class UIController {
   private setIdle(): void {
     document.getElementById('start-btn')!.removeAttribute('disabled');
     document.getElementById('pause-btn')!.setAttribute('disabled', '');
-    (document.getElementById('pause-btn') as HTMLButtonElement).textContent = 'Pause';
+    (document.getElementById('pause-btn') as HTMLButtonElement).innerHTML = `${ICON.pause} Pause`;
     document.getElementById('stop-btn')!.setAttribute('disabled', '');
   }
 
@@ -265,8 +272,8 @@ export class UIController {
           <span class="recording-meta">${dateStr} · ${this.formatSize(rec.size)} · ${rec.duration}</span>
         </div>
         <div class="recording-actions">
-          <button class="rec-action-btn reveal-btn">Show</button>
-          <button class="rec-action-btn delete-btn">Del</button>
+          <button class="rec-action-btn reveal-btn" title="Reveal in Finder">${ICON.reveal}</button>
+          <button class="rec-action-btn delete-btn" title="Move to Trash">${ICON.trash}</button>
         </div>
       `;
       item.querySelector('.reveal-btn')!.addEventListener('click', async () => {
