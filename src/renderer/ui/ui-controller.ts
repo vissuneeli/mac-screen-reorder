@@ -294,6 +294,7 @@ export class UIController {
           if (!result.exists) { HistoryManager.remove(rec.path); this.refreshRecentList(); }
         });
         item.querySelector('.delete-btn')!.addEventListener('click', async () => {
+          if (!confirm(`Move "${rec.filename}" to Trash?`)) return;
           await this.api.deleteFile(rec.path);
           HistoryManager.remove(rec.path);
           this.refreshRecentList();
